@@ -6,7 +6,7 @@
 orbit title
 ┌────────────────────────────┐
 │ Fragment container          │
-│  - Travel Record            │
+│  - Travel Log               │
 │  - AI Planner               │
 └────────────────────────────┘
 BottomNavigationView
@@ -15,11 +15,11 @@ BottomNavigationView
 ## TravelRecordFragment
 
 ```text
-My Earth title
-Earth hub: My / Friends / World
-status text
-RecyclerView trip list
-[sample detail] [add trip]
+My Earth GLB
+Friends Earth GLB
+World Earth GLB
+tap Earth -> satellite map
+[travel list] [add trip]
 ```
 
 ## AddTripActivity

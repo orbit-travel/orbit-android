@@ -7,8 +7,8 @@
 ## 권장 데모 순서
 
 1. SplashActivity에서 orbit 시작 화면 확인
-2. MainActivity에서 Travel Record 탭과 AI Planner 탭 확인
-3. Travel Record에서 샘플 여행 목록 RecyclerView 확인
+2. MainActivity에서 Travel Log 탭과 AI Planner 탭 확인
+3. Travel Log에서 3개 GLB 지구와 샘플 여행 목록 RecyclerView 확인
 4. 여행 추가 버튼으로 AddTripActivity 이동
 5. 제목/도착지 입력, 사진 선택 UI 확인, 저장 후 ActivityResult 수신 확인
 6. 샘플 상세 또는 trip card 클릭으로 TravelDetailActivity 이동

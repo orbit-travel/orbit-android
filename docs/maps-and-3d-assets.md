@@ -2,37 +2,34 @@
 
 ## Current implementation
 
-The Travel Record tab currently uses `LowPolyEarthView`, a custom Android `View`.
+The Travel Log tab currently uses `EarthModelView`, a custom wrapper around SceneView.
 
 This means:
 
-- No `.glb`, `.gltf`, `.obj`, or texture file is required right now.
+- The Earth model is loaded from `app/src/main/assets/models/planet_earth.glb`.
+- The asset location used by code is `models/planet_earth.glb`.
 - The three Earths rotate automatically.
 - Users can swipe each Earth to rotate it manually.
 - Tapping an Earth runs a zoom-like animation and unfolds the Google satellite map panel.
+- My Earth uses the original model color. Friends and World use a light teal overlay filter.
 
-This is the lower-risk MVP choice for the course demo because it does not depend on external 3D renderers, asset loading, or model licensing.
+This uses SceneView/Filament because Android does not provide native GLB rendering out of the box.
 
-## If we later use a real 3D model
+## Asset path
 
-Recommended asset path:
-
-```text
-app/src/main/assets/models/low_poly_earth.glb
-```
-
-Recommended Android renderer option:
+Use this standard Android asset path:
 
 ```text
-SceneView Android / Google Filament
+app/src/main/assets/models/<model-file>.glb
 ```
 
-Candidate asset sources checked:
+For the current file:
 
-- Pixabay: "Earth Low Poly Planet" provides a downloadable GLB asset.
-- SceneView Android: open-source Android 3D/AR rendering library powered by Google Filament.
+```text
+app/src/main/assets/models/planet_earth.glb
+```
 
-Before adding a model file, verify the license and attribution requirements. Do not commit a model unless its license is acceptable for the project submission.
+If the model file is replaced, keep the same filename or update `EarthModelView.MODEL_ASSET`.
 
 ## Google Maps API key
 

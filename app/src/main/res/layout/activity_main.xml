@@ -6,32 +6,44 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/orbit_space"
+    android:clipChildren="false"
+    android:clipToPadding="false"
     tools:context=".ui.main.MainActivity">
 
-    <TextView
-        android:id="@+id/titleOrbit"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:paddingStart="24dp"
-        android:paddingTop="18dp"
-        android:paddingEnd="24dp"
-        android:text="@string/app_name"
-        android:textColor="@color/white"
-        android:textSize="28sp"
-        android:textStyle="bold"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragmentContainer"
+    <FrameLayout
+        android:id="@+id/contentArea"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
+        android:clipChildren="false"
+        android:clipToPadding="false"
         app:layout_constraintBottom_toTopOf="@id/bottomNavigation"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/titleOrbit" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <com.pnu.orbit.ui.record.SpaceBackgroundView
+            android:id="@+id/appSpaceBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/fragmentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/titleOrbit"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:gravity="center_vertical"
+            android:elevation="8dp"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
+            android:text="@string/app_name"
+            android:textColor="@color/white"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+    </FrameLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNavigation"

@@ -6,4 +6,4 @@
 
 자세한 설계 범위와 다음 구현 순서는 `docs/architecture.md`, `docs/mvp-roadmap.md`, `docs/demo-scenario.md`를 참고하세요.
 
-Travel Record 탭의 Google Maps 키와 3D 지구 asset 정책은 `docs/maps-and-3d-assets.md`에 정리했습니다.
+Travel Log 탭의 Google Maps 키와 3D 지구 asset 정책은 `docs/maps-and-3d-assets.md`에 정리했습니다.

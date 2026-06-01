@@ -30,7 +30,7 @@ import com.pnu.orbit.util.IntentKeys
 class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     private val viewModel: TravelRecordViewModel by viewModels()
     private lateinit var adapter: TripPreviewAdapter
-    private lateinit var statusText: TextView
+    private lateinit var earthStage: View
     private lateinit var tripRecyclerView: RecyclerView
     private lateinit var mapPanel: View
     private lateinit var mapKeyPlaceholder: TextView
@@ -46,8 +46,7 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val title = result.data?.getStringExtra(IntentKeys.EXTRA_TRIP_TITLE).orEmpty()
-            statusText.text = "AddTripActivity result received: $title"
+            viewModel.loadFallbackTrips()
         }
     }
 
@@ -55,8 +54,7 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            val comment = result.data?.getStringExtra(IntentKeys.EXTRA_UPDATED_COMMENT).orEmpty()
-            statusText.text = "TravelDetailActivity result received: $comment"
+            viewModel.loadFallbackTrips()
         }
     }
 
@@ -67,7 +65,7 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     ): View = inflater.inflate(R.layout.fragment_travel_record, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        statusText = view.findViewById(R.id.recordStatus)
+        earthStage = view.findViewById(R.id.earthStage)
         mapPanel = view.findViewById(R.id.mapPanel)
         mapKeyPlaceholder = view.findViewById(R.id.mapKeyPlaceholder)
         recordActions = view.findViewById(R.id.recordActions)
@@ -116,28 +114,22 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
 
     private fun renderState(state: UiState<List<Trip>>) {
         when (state) {
-            UiState.Empty -> {
-                adapter.submitList(emptyList())
-                statusText.text = "Swipe a globe to rotate. Tap one to unfold the satellite map."
-            }
-            is UiState.Error -> statusText.text = state.message
-            UiState.Loading -> statusText.text = "Loading travel records..."
-            is UiState.Success -> {
-                adapter.submitList(state.data)
-                statusText.text = "Swipe a globe to rotate. Tap one to unfold the satellite map."
-            }
+            UiState.Empty -> adapter.submitList(emptyList())
+            is UiState.Error -> adapter.submitList(emptyList())
+            UiState.Loading -> Unit
+            is UiState.Success -> adapter.submitList(state.data)
         }
     }
 
     private fun setupEarthHub(view: View) {
-        val earthMy = view.findViewById<LowPolyEarthView>(R.id.earthMy).apply {
-            setEarthKind(LowPolyEarthView.EarthKind.MY)
+        val earthMy = view.findViewById<EarthModelView>(R.id.earthMy).apply {
+            setEarthVariant(EarthModelView.EarthVariant.MY)
         }
-        val earthFriends = view.findViewById<LowPolyEarthView>(R.id.earthFriends).apply {
-            setEarthKind(LowPolyEarthView.EarthKind.FRIENDS)
+        val earthFriends = view.findViewById<EarthModelView>(R.id.earthFriends).apply {
+            setEarthVariant(EarthModelView.EarthVariant.FRIENDS)
         }
-        val earthWorld = view.findViewById<LowPolyEarthView>(R.id.earthWorld).apply {
-            setEarthKind(LowPolyEarthView.EarthKind.WORLD)
+        val earthWorld = view.findViewById<EarthModelView>(R.id.earthWorld).apply {
+            setEarthVariant(EarthModelView.EarthVariant.WORLD)
         }
 
         earthMy.setOnClickListener { selectEarth(EarthSelection.MY, earthMy) }
@@ -149,7 +141,6 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     private fun selectEarth(selection: EarthSelection, earthView: View) {
         selectedEarth = selection
         updateEarthLabels()
-        statusText.text = "${selection.label} Earth satellite view"
 
         earthView.animate()
             .scaleX(1.28f)
@@ -171,15 +162,21 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun updateEarthLabels() {
-        val active = ContextCompat.getColor(requireContext(), R.color.orbit_primary)
-        val inactive = ContextCompat.getColor(requireContext(), R.color.orbit_text_secondary)
-        labelMy.setTextColor(if (selectedEarth == EarthSelection.MY) active else inactive)
-        labelFriends.setTextColor(if (selectedEarth == EarthSelection.FRIENDS) active else inactive)
-        labelWorld.setTextColor(if (selectedEarth == EarthSelection.WORLD) active else inactive)
+        labelMy.setTextColor(ContextCompat.getColor(requireContext(), R.color.nebula_my))
+        labelFriends.setTextColor(ContextCompat.getColor(requireContext(), R.color.nebula_friends))
+        labelWorld.setTextColor(ContextCompat.getColor(requireContext(), R.color.nebula_world))
     }
 
     private fun unfoldMapPanel() {
         if (mapPanel.visibility == View.VISIBLE) return
+
+        earthStage.animate()
+            .alpha(0f)
+            .scaleX(1.03f)
+            .scaleY(1.03f)
+            .setDuration(260L)
+            .withEndAction { earthStage.visibility = View.GONE }
+            .start()
 
         recordActions.alpha = 0f
         recordActions.translationY = 18f

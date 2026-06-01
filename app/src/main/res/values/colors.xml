@@ -10,4 +10,7 @@
     <color name="orbit_secondary">#98DFAF</color>
     <color name="orbit_accent">#FFD166</color>
     <color name="orbit_text_secondary">#B7C0CC</color>
+    <color name="nebula_my">#7DD3FC</color>
+    <color name="nebula_friends">#C084FC</color>
+    <color name="nebula_world">#F472B6</color>
 </resources>

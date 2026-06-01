@@ -9,21 +9,13 @@ import android.graphics.RadialGradient
 import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
-import kotlin.math.min
+import kotlin.math.max
 
 class SpaceBackgroundView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : View(context, attrs) {
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val stars = List(STAR_COUNT) { index ->
-        Star(
-            xRatio = pseudoRandom(index, 17),
-            yRatio = pseudoRandom(index, 43),
-            radiusRatio = 0.0014f + pseudoRandom(index, 71) * 0.0028f,
-            alpha = 70 + (pseudoRandom(index, 91) * 150).toInt(),
-        )
-    }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -33,47 +25,31 @@ class SpaceBackgroundView @JvmOverloads constructor(
             0f,
             0f,
             height.toFloat(),
-            intArrayOf(Color.rgb(3, 5, 12), Color.rgb(12, 18, 32), Color.rgb(4, 6, 14)),
-            floatArrayOf(0f, 0.52f, 1f),
+            intArrayOf(Color.rgb(5, 4, 16), Color.rgb(13, 9, 32), Color.rgb(2, 5, 14)),
+            floatArrayOf(0f, 0.48f, 1f),
             Shader.TileMode.CLAMP,
         )
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
 
         paint.shader = RadialGradient(
-            width * 0.55f,
-            height * 0.18f,
-            min(width, height) * 0.55f,
-            intArrayOf(Color.argb(62, 70, 150, 255), Color.TRANSPARENT),
-            null,
+            width * 0.18f,
+            height * 0.24f,
+            max(width, height) * 0.62f,
+            intArrayOf(Color.argb(120, 80, 42, 180), Color.argb(42, 20, 100, 172), Color.TRANSPARENT),
+            floatArrayOf(0f, 0.54f, 1f),
+            Shader.TileMode.CLAMP,
+        )
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
+
+        paint.shader = RadialGradient(
+            width * 0.86f,
+            height * 0.72f,
+            max(width, height) * 0.58f,
+            intArrayOf(Color.argb(95, 224, 52, 153), Color.argb(36, 39, 215, 205), Color.TRANSPARENT),
+            floatArrayOf(0f, 0.5f, 1f),
             Shader.TileMode.CLAMP,
         )
         canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), paint)
         paint.shader = null
-
-        stars.forEach { star ->
-            paint.color = Color.argb(star.alpha, 255, 255, 255)
-            canvas.drawCircle(
-                width * star.xRatio,
-                height * star.yRatio,
-                min(width, height) * star.radiusRatio,
-                paint,
-            )
-        }
-    }
-
-    private fun pseudoRandom(index: Int, salt: Int): Float {
-        val value = (index * 1103515245L + salt * 12345L + 67890L) and 0x7fffffff
-        return (value % 10000L).toFloat() / 10000f
-    }
-
-    private data class Star(
-        val xRatio: Float,
-        val yRatio: Float,
-        val radiusRatio: Float,
-        val alpha: Int,
-    )
-
-    companion object {
-        private const val STAR_COUNT = 72
     }
 }
