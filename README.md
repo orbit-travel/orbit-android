@@ -5,3 +5,5 @@
 현재 상태는 Empty Views 템플릿에서 MVP 개발을 시작할 수 있도록 기본 패키지, Activity/Fragment, Room/Repository, Retrofit, Glide, 문서 구조를 잡아 둔 스캐폴딩 단계입니다.
 
 자세한 설계 범위와 다음 구현 순서는 `docs/architecture.md`, `docs/mvp-roadmap.md`, `docs/demo-scenario.md`를 참고하세요.
+
+Travel Record 탭의 Google Maps 키와 3D 지구 asset 정책은 `docs/maps-and-3d-assets.md`에 정리했습니다.

@@ -39,7 +39,7 @@ class TripPreviewAdapter(
 
         fun bind(trip: Trip) {
             title.text = trip.title
-            subtitle.text = "${trip.destination} · photos ${trip.photoCount} · ${trip.memo.orEmpty()}"
+            subtitle.text = "${trip.destination} | photos ${trip.photoCount} | ${trip.memo.orEmpty()}"
             itemView.setOnClickListener { onTripClick(trip) }
         }
     }
