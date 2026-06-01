@@ -165,19 +165,19 @@ class EarthModelView @JvmOverloads constructor(
         MY(
             initialRotationY = 0f,
             spinSpeed = 0.035f,
-            scaleToUnits = 5.1f,
+            scaleToUnits = 4.35f,
             cameraZ = 3.3f,
         ),
         FRIENDS(
             initialRotationY = 120f,
             spinSpeed = 0.03f,
-            scaleToUnits = 5.1f,
+            scaleToUnits = 4.35f,
             cameraZ = 3.3f,
         ),
         WORLD(
             initialRotationY = 240f,
             spinSpeed = 0.028f,
-            scaleToUnits = 5.1f,
+            scaleToUnits = 4.35f,
             cameraZ = 3.3f,
         ),
     }

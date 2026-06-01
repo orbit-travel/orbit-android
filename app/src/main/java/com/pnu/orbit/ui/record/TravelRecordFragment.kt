@@ -1,13 +1,24 @@
 package com.pnu.orbit.ui.record
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.content.res.Resources
+import android.location.Location
+import android.location.LocationListener
+import android.location.LocationManager
 import android.os.Bundle
+import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
@@ -19,6 +30,7 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.pnu.orbit.BuildConfig
 import com.pnu.orbit.R
 import com.pnu.orbit.domain.model.Trip
@@ -41,6 +53,9 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     private lateinit var labelWorld: TextView
     private var googleMap: GoogleMap? = null
     private var selectedEarth = EarthSelection.MY
+    private var currentLocationTarget: LatLng? = null
+    private var activeLocationListener: LocationListener? = null
+    private var hasRequestedLocationPermission = false
 
     private val addTripLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
@@ -56,6 +71,28 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         if (result.resultCode == Activity.RESULT_OK) {
             viewModel.loadFallbackTrips()
         }
+    }
+
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        if (hasLocationPermission()) {
+            refreshCurrentLocation()
+        } else {
+            Toast.makeText(
+                requireContext(),
+                "Location permission is needed to center the map.",
+                Toast.LENGTH_SHORT,
+            ).show()
+            moveMapToSelectedEarth(animate = false)
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        hasRequestedLocationPermission = savedInstanceState
+            ?.getBoolean(STATE_LOCATION_PERMISSION_REQUESTED)
+            ?: false
     }
 
     override fun onCreateView(
@@ -82,6 +119,7 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
 
         setupEarthHub(view)
         ensureMapFragment()
+        requestLocationPermissionIfNeeded()
 
         view.findViewById<Button>(R.id.buttonAddTrip).setOnClickListener {
             addTripLauncher.launch(Intent(requireContext(), AddTripActivity::class.java))
@@ -94,9 +132,28 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         viewModel.loadFallbackTrips()
     }
 
+    override fun onResume() {
+        super.onResume()
+        if (hasLocationPermission()) {
+            refreshCurrentLocation()
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_LOCATION_PERMISSION_REQUESTED, hasRequestedLocationPermission)
+    }
+
+    override fun onDestroyView() {
+        removeActiveLocationListener()
+        googleMap = null
+        super.onDestroyView()
+    }
+
     override fun onMapReady(map: GoogleMap) {
         googleMap = map.apply {
-            mapType = GoogleMap.MAP_TYPE_SATELLITE
+            mapType = GoogleMap.MAP_TYPE_NORMAL
+            applyNebulaMapStyle()
             uiSettings.isCompassEnabled = true
             uiSettings.isMapToolbarEnabled = false
             uiSettings.isZoomControlsEnabled = false
@@ -109,7 +166,27 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         } else {
             View.GONE
         }
-        moveMapToSelectedEarth(animate = false)
+        if (hasLocationPermission()) {
+            refreshCurrentLocation()
+        } else {
+            moveMapToSelectedEarth(animate = false)
+        }
+    }
+
+    private fun GoogleMap.applyNebulaMapStyle() {
+        try {
+            val success = setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireContext(),
+                    R.raw.map_style_nebula,
+                ),
+            )
+            if (!success) {
+                Log.e(TAG, "Map style parsing failed.")
+            }
+        } catch (exception: Resources.NotFoundException) {
+            Log.e(TAG, "Map style resource not found.", exception)
+        }
     }
 
     private fun renderState(state: UiState<List<Trip>>) {
@@ -158,7 +235,12 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
             .start()
 
         unfoldMapPanel()
-        moveMapToSelectedEarth(animate = true)
+        if (hasLocationPermission()) {
+            refreshCurrentLocation(animate = true)
+        } else {
+            requestLocationPermissionIfNeeded()
+            moveMapToSelectedEarth(animate = true)
+        }
     }
 
     private fun updateEarthLabels() {
@@ -239,12 +321,117 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
 
     private fun moveMapToSelectedEarth(animate: Boolean) {
         val map = googleMap ?: return
-        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(selectedEarth.cameraTarget, selectedEarth.zoom)
+        val cameraTarget = currentLocationTarget ?: selectedEarth.cameraTarget
+        val cameraUpdate = CameraUpdateFactory.newLatLngZoom(cameraTarget, selectedEarth.zoom)
         if (animate && mapPanel.visibility == View.VISIBLE) {
             map.animateCamera(cameraUpdate)
         } else {
             map.moveCamera(cameraUpdate)
         }
+    }
+
+    private fun requestLocationPermissionIfNeeded() {
+        if (hasLocationPermission()) {
+            refreshCurrentLocation()
+            return
+        }
+        if (hasRequestedLocationPermission) return
+
+        hasRequestedLocationPermission = true
+        locationPermissionLauncher.launch(LOCATION_PERMISSIONS)
+    }
+
+    private fun hasLocationPermission(): Boolean {
+        val context = context ?: return false
+        return ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+        ) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+            ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun refreshCurrentLocation(animate: Boolean = mapPanel.visibility == View.VISIBLE) {
+        if (!hasLocationPermission()) return
+
+        googleMap?.apply {
+            isMyLocationEnabled = true
+            uiSettings.isMyLocationButtonEnabled = true
+        }
+
+        val locationManager = requireContext()
+            .getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        findBestLastKnownLocation(locationManager)?.let { location ->
+            updateCurrentLocationTarget(location, animate)
+        }
+        requestSingleLocationUpdate(locationManager, animate)
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun findBestLastKnownLocation(locationManager: LocationManager): Location? =
+        locationManager.getProviders(true)
+            .ifEmpty {
+                listOf(
+                    LocationManager.NETWORK_PROVIDER,
+                    LocationManager.GPS_PROVIDER,
+                    LocationManager.PASSIVE_PROVIDER,
+                )
+            }
+            .mapNotNull { provider ->
+                runCatching { locationManager.getLastKnownLocation(provider) }.getOrNull()
+            }
+            .maxByOrNull { location -> location.time }
+
+    @SuppressLint("MissingPermission")
+    private fun requestSingleLocationUpdate(locationManager: LocationManager, animate: Boolean) {
+        val provider = listOf(
+            LocationManager.NETWORK_PROVIDER,
+            LocationManager.GPS_PROVIDER,
+        ).firstOrNull { provider ->
+            runCatching { locationManager.isProviderEnabled(provider) }.getOrDefault(false)
+        } ?: return
+
+        removeActiveLocationListener()
+        val listener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                updateCurrentLocationTarget(location, animate)
+                removeActiveLocationListener()
+            }
+
+            override fun onProviderDisabled(provider: String) = Unit
+
+            override fun onProviderEnabled(provider: String) = Unit
+
+            @Deprecated("Deprecated in Java")
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+        }
+        activeLocationListener = listener
+
+        @Suppress("DEPRECATION")
+        runCatching {
+            locationManager.requestSingleUpdate(provider, listener, Looper.getMainLooper())
+        }.onFailure { error ->
+            Log.w(TAG, "Failed to request current location.", error)
+            removeActiveLocationListener()
+        }
+    }
+
+    private fun updateCurrentLocationTarget(location: Location, animate: Boolean) {
+        currentLocationTarget = LatLng(location.latitude, location.longitude)
+        moveMapToSelectedEarth(animate)
+    }
+
+    private fun removeActiveLocationListener() {
+        val listener = activeLocationListener ?: return
+        val locationManager = context
+            ?.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
+        if (locationManager != null) {
+            runCatching { locationManager.removeUpdates(listener) }
+        }
+        activeLocationListener = null
     }
 
     private fun openDetail(trip: Trip) {
@@ -260,8 +447,17 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         val cameraTarget: LatLng,
         val zoom: Float,
     ) {
-        MY("My", LatLng(35.1796, 129.0756), 10.5f),
-        FRIENDS("Friends", LatLng(37.5665, 126.9780), 9.5f),
-        WORLD("World", LatLng(34.6937, 135.5023), 5.2f),
+        MY("My", LatLng(35.1796, 129.0756), 4.45f),
+        FRIENDS("Friends", LatLng(35.1796, 129.0756), 4.45f),
+        WORLD("World", LatLng(35.1796, 129.0756), 4.45f),
+    }
+
+    companion object {
+        private const val TAG = "TravelRecordFragment"
+        private const val STATE_LOCATION_PERMISSION_REQUESTED = "state_location_permission_requested"
+        private val LOCATION_PERMISSIONS = arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+        )
     }
 }
