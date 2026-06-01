@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/orbit_space"
+    android:fillViewport="true">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="24dp">
+
+        <TextView
+            android:id="@+id/addTripTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="새 여행 기록"
+            android:textColor="@color/white"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <EditText
+            android:id="@+id/inputTripTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:hint="여행 제목"
+            android:inputType="text"
+            android:textColor="@color/white"
+            android:textColorHint="@color/orbit_text_secondary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/addTripTitle" />
+
+        <EditText
+            android:id="@+id/inputStartPlace"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="출발지"
+            android:inputType="text"
+            android:textColor="@color/white"
+            android:textColorHint="@color/orbit_text_secondary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/inputTripTitle" />
+
+        <EditText
+            android:id="@+id/inputDestination"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:hint="도착지"
+            android:inputType="text"
+            android:textColor="@color/white"
+            android:textColorHint="@color/orbit_text_secondary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/inputStartPlace" />
+
+        <Button
+            android:id="@+id/buttonPickPhotos"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="사진 선택"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/inputDestination" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/selectedPhotoList"
+            android:layout_width="0dp"
+            android:layout_height="120dp"
+            android:layout_marginTop="12dp"
+            android:background="@color/orbit_surface"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/buttonPickPhotos" />
+
+        <Button
+            android:id="@+id/buttonSaveTrip"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="저장"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/selectedPhotoList" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

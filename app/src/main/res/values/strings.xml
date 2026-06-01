@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">orbit</string>
+    <string name="tab_record">Travel Record</string>
+    <string name="tab_planner">AI Planner</string>
 </resources>

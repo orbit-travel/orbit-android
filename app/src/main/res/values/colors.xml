@@ -2,4 +2,10 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="orbit_space">#10131A</color>
+    <color name="orbit_surface">#191D26</color>
+    <color name="orbit_surface_light">#252B36</color>
+    <color name="orbit_primary">#64D2FF</color>
+    <color name="orbit_secondary">#98DFAF</color>
+    <color name="orbit_text_secondary">#B7C0CC</color>
 </resources>
