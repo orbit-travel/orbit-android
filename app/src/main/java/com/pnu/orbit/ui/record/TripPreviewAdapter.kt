@@ -39,7 +39,12 @@ class TripPreviewAdapter(
 
         fun bind(trip: Trip) {
             title.text = trip.title
-            subtitle.text = "${trip.destination} | photos ${trip.photoCount} | ${trip.memo.orEmpty()}"
+            subtitle.text = itemView.context.getString(
+                R.string.trip_subtitle,
+                trip.destination,
+                trip.photoCount,
+                trip.memo ?: itemView.context.getString(R.string.trip_memo_empty),
+            )
             itemView.setOnClickListener { onTripClick(trip) }
         }
     }

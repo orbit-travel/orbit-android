@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/addTripScrollView"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/orbit_space"
@@ -9,13 +10,13 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="24dp">
+        android:padding="20dp">
 
         <TextView
             android:id="@+id/addTripTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="새 여행 기록"
+            android:text="@string/add_trip_title"
             android:textColor="@color/white"
             android:textSize="24sp"
             android:textStyle="bold"
@@ -27,69 +28,138 @@
             android:id="@+id/inputTripTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:hint="여행 제목"
-            android:inputType="text"
+            android:layout_marginTop="18dp"
+            android:hint="@string/trip_title_hint"
+            android:inputType="textCapWords"
             android:textColor="@color/white"
             android:textColorHint="@color/orbit_text_secondary"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/addTripTitle" />
 
-        <EditText
-            android:id="@+id/inputStartPlace"
+        <TextView
+            android:id="@+id/dateSectionTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="출발지"
-            android:inputType="text"
+            android:layout_marginTop="22dp"
+            android:text="@string/section_dates"
             android:textColor="@color/white"
-            android:textColorHint="@color/orbit_text_secondary"
+            android:textSize="17sp"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/inputTripTitle" />
 
-        <EditText
-            android:id="@+id/inputDestination"
+        <LinearLayout
+            android:id="@+id/calendarHeader"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:hint="도착지"
-            android:inputType="text"
-            android:textColor="@color/white"
-            android:textColorHint="@color/orbit_text_secondary"
+            android:layout_height="44dp"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/inputStartPlace" />
+            app:layout_constraintTop_toBottomOf="@id/dateSectionTitle">
 
-        <Button
-            android:id="@+id/buttonPickPhotos"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="사진 선택"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/inputDestination" />
+            <Button
+                android:id="@+id/buttonPreviousMonth"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
+                android:contentDescription="@string/calendar_previous"
+                android:text="@string/calendar_previous_symbol" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/selectedPhotoList"
+            <TextView
+                android:id="@+id/calendarMonthTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:textColor="@color/white"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/buttonNextMonth"
+                android:layout_width="48dp"
+                android:layout_height="40dp"
+                android:contentDescription="@string/calendar_next"
+                android:text="@string/calendar_next_symbol" />
+        </LinearLayout>
+
+        <com.pnu.orbit.ui.addtrip.RangeCalendarView
+            android:id="@+id/rangeCalendar"
             android:layout_width="0dp"
-            android:layout_height="120dp"
-            android:layout_marginTop="12dp"
+            android:layout_height="320dp"
+            android:layout_marginTop="6dp"
             android:background="@color/orbit_surface"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/buttonPickPhotos" />
+            app:layout_constraintTop_toBottomOf="@id/calendarHeader" />
+
+        <TextView
+            android:id="@+id/dateRangeText"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/date_range_empty"
+            android:textColor="@color/orbit_text_secondary"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/rangeCalendar" />
+
+        <TextView
+            android:id="@+id/transportSectionTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/section_timeline"
+            android:textColor="@color/white"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/dateRangeText" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/timelineList"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:nestedScrollingEnabled="false"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/transportSectionTitle" />
+
+        <Button
+            android:id="@+id/buttonAddTimelineItem"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/button_add_item"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/timelineList" />
+
+        <TextView
+            android:id="@+id/addTripStatus"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/orbit_text_secondary"
+            android:textSize="13sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/buttonAddTimelineItem" />
 
         <Button
             android:id="@+id/buttonSaveTrip"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="저장"
+            android:layout_marginTop="16dp"
+            android:text="@string/button_save"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/selectedPhotoList" />
+            app:layout_constraintTop_toBottomOf="@id/addTripStatus" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

@@ -60,17 +60,13 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     private val addTripLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.loadFallbackTrips()
-        }
+        if (result.resultCode == Activity.RESULT_OK) Unit
     }
 
     private val detailLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            viewModel.loadFallbackTrips()
-        }
+        if (result.resultCode == Activity.RESULT_OK) Unit
     }
 
     private val locationPermissionLauncher = registerForActivityResult(
@@ -129,7 +125,6 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         }
 
         viewModel.trips.observe(viewLifecycleOwner) { state -> renderState(state) }
-        viewModel.loadFallbackTrips()
     }
 
     override fun onResume() {

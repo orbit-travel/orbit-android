@@ -6,7 +6,7 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 
 @Entity(
-    tableName = "photos",
+    tableName = "transport_segments",
     foreignKeys = [
         ForeignKey(
             entity = TripEntity::class,
@@ -15,18 +15,18 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE,
         ),
     ],
-    indices = [Index("tripId"), Index("segmentId")],
+    indices = [Index("tripId")],
 )
-data class PhotoEntity(
+data class TransportSegmentEntity(
     @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+    val id: Long = 0L,
     val tripId: Long,
-    val segmentId: Long?,
-    val uri: String,
-    val takenAt: Long?,
-    val lat: Double?,
-    val lng: Double?,
-    val locationName: String?,
-    val comment: String?,
-    val tag: String?,
+    val type: String,
+    val departureName: String,
+    val departureLat: Double?,
+    val departureLng: Double?,
+    val arrivalName: String,
+    val arrivalLat: Double?,
+    val arrivalLng: Double?,
+    val sortOrder: Int,
 )

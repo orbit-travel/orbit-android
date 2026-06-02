@@ -28,6 +28,9 @@
             android:name=".ui.detail.TravelDetailActivity"
             android:exported="false" />
         <activity
+            android:name=".ui.addtrip.PlaceSearchActivity"
+            android:exported="false" />
+        <activity
             android:name=".ui.addtrip.AddTripActivity"
             android:exported="false" />
         <activity

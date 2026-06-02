@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:paddingTop="14dp"
+    android:paddingBottom="14dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_polaroid_card"
+        android:elevation="6dp"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="16dp">
+
+        <FrameLayout
+            android:id="@+id/polaroidPhotoWindow"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:background="@color/black">
+
+            <ImageView
+                android:id="@+id/polaroidImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:adjustViewBounds="true"
+                android:background="@color/black"
+                android:contentDescription="@string/section_photos"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
+
+        <EditText
+            android:id="@+id/inputPhotoComment"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="@string/photo_note_hint"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="2"
+            android:minLines="1"
+            android:textColor="@color/black"
+            android:textColorHint="#777777" />
+
+        <TextView
+            android:id="@+id/photoTakenTimeText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#555555"
+            android:textSize="13sp" />
+
+        <TextView
+            android:id="@+id/photoLocationText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="#555555"
+            android:textSize="13sp" />
+
+        <Button
+            android:id="@+id/buttonSelectPhotoLocation"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="4dp"
+            android:text="@string/button_pick_location" />
+    </LinearLayout>
+</LinearLayout>

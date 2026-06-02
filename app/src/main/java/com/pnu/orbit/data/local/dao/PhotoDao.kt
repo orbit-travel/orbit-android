@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface PhotoDao {
-    @Query("SELECT * FROM photos WHERE tripId = :tripId ORDER BY takenAt ASC")
+    @Query("SELECT * FROM photos WHERE tripId = :tripId ORDER BY takenAt IS NULL, takenAt ASC")
     fun observePhotos(tripId: Long): Flow<List<PhotoEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

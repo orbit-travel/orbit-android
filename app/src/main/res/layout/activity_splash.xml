@@ -25,7 +25,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="travel memories around my earth"
+        android:text="@string/splash_subtitle"
         android:textColor="@color/orbit_text_secondary"
         android:textSize="14sp"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -1,6 +1,7 @@
 package com.pnu.orbit.data.mapper
 
 import com.pnu.orbit.data.local.entity.TripEntity
+import com.pnu.orbit.data.local.dao.TripWithPhotoCount
 import com.pnu.orbit.domain.model.Trip
 
 fun TripEntity.toDomain(photoCount: Int = 0): Trip = Trip(
@@ -14,6 +15,8 @@ fun TripEntity.toDomain(photoCount: Int = 0): Trip = Trip(
     memo = memo,
     photoCount = photoCount,
 )
+
+fun TripWithPhotoCount.toDomain(): Trip = trip.toDomain(photoCount = photoCount)
 
 fun Trip.toEntity(): TripEntity = TripEntity(
     id = id,

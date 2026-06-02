@@ -146,7 +146,7 @@
                 android:background="@color/orbit_surface_light"
                 android:gravity="center"
                 android:padding="18dp"
-                android:text="Google satellite map\nAdd MAPS_API_KEY in local.properties"
+                android:text="@string/record_map_key_missing"
                 android:textAlignment="center"
                 android:textColor="@color/orbit_text_secondary"
                 android:textSize="13sp" />

@@ -9,6 +9,7 @@ object RepositoryProvider {
         val database = OrbitDatabase.getInstance(context)
         return LocalTripRepository(
             tripDao = database.tripDao(),
+            transportSegmentDao = database.transportSegmentDao(),
             photoDao = database.photoDao(),
         )
     }

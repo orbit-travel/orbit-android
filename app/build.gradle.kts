@@ -11,6 +11,7 @@ if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
 val mapsApiKey = localProperties.getProperty("MAPS_API_KEY").orEmpty()
+val placesApiKey = localProperties.getProperty("PLACES_API_KEY", mapsApiKey).orEmpty()
 
 fun String.asBuildConfigString(): String =
     "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
@@ -33,6 +34,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         buildConfigField("String", "MAPS_API_KEY", mapsApiKey.asBuildConfigString())
+        buildConfigField("String", "PLACES_API_KEY", placesApiKey.asBuildConfigString())
     }
 
     buildTypes {
@@ -76,6 +78,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.play.services.maps)
+    implementation(libs.places)
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.sceneview)

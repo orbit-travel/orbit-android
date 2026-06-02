@@ -13,6 +13,17 @@ interface TripDao {
     @Query("SELECT * FROM trips ORDER BY startDate DESC")
     fun observeTrips(): Flow<List<TripEntity>>
 
+    @Query(
+        """
+        SELECT trips.*, COUNT(photos.id) AS photoCount
+        FROM trips
+        LEFT JOIN photos ON photos.tripId = trips.id
+        GROUP BY trips.id
+        ORDER BY trips.startDate DESC
+        """,
+    )
+    fun observeTripsWithPhotoCount(): Flow<List<TripWithPhotoCount>>
+
     @Query("SELECT * FROM trips WHERE id = :tripId")
     suspend fun getTrip(tripId: Long): TripEntity?
 

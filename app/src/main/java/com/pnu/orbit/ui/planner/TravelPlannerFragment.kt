@@ -37,23 +37,23 @@ class TravelPlannerFragment : Fragment() {
         }
 
         viewModel.plan.observe(viewLifecycleOwner) { state -> renderState(state) }
-        viewModel.generateFallbackPlan(destination = "부산", days = 2, style = "culture")
+        viewModel.generateFallbackPlan(destination = "Busan", days = 2, style = "culture")
     }
 
     private fun renderState(state: UiState<TravelPlan>) {
         when (state) {
             UiState.Empty -> {
                 adapter.submitList(emptyList())
-                statusText.text = "도착지와 일수를 입력하면 AI 계획을 생성합니다."
+                statusText.text = getString(R.string.planner_empty)
             }
             is UiState.Error -> statusText.text = state.message
-            UiState.Loading -> statusText.text = "여행 계획 생성 중..."
+            UiState.Loading -> statusText.text = getString(R.string.planner_loading)
             is UiState.Success -> {
                 adapter.submitList(state.data.dayPlans)
                 statusText.text = if (state.data.isFallback) {
-                    "API 실패/미연결 시 표시할 fallback 계획입니다."
+                    getString(R.string.planner_fallback)
                 } else {
-                    "AI API 결과를 표시 중입니다."
+                    getString(R.string.planner_success)
                 }
             }
         }
