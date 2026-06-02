@@ -37,7 +37,6 @@ class TravelPlannerFragment : Fragment() {
         }
 
         viewModel.plan.observe(viewLifecycleOwner) { state -> renderState(state) }
-        viewModel.generatePlan(destination = "Busan", days = 2, style = "culture")
     }
 
     private fun renderState(state: UiState<TravelPlan>) {

@@ -21,6 +21,16 @@ class TravelPlannerViewModel(
     private val _plan = MutableLiveData<UiState<TravelPlan>>(UiState.Empty)
     val plan: LiveData<UiState<TravelPlan>> = _plan
 
+    init {
+        viewModelScope.launch {
+            repository.observeSavedPlans().collect { plans ->
+                if (plans.isNotEmpty() && _plan.value is UiState.Empty) {
+                    _plan.value = UiState.Success(plans.first())
+                }
+            }
+        }
+    }
+
     fun generatePlan(destination: String, days: Int, style: String) {
         _plan.value = UiState.Loading
         viewModelScope.launch {

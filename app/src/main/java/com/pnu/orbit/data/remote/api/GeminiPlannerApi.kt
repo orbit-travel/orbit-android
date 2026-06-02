@@ -56,9 +56,19 @@ class GeminiPlannerApi(
         )
 
         val response = geminiApi.generateContent(apiKey, geminiRequest)
-        val jsonText = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
+        val rawJson = response.candidates?.firstOrNull()?.content?.parts?.firstOrNull()?.text
             ?: throw IllegalStateException("Empty response from Gemini API")
 
-        return gson.fromJson(jsonText, AiPlanResponseDto::class.java)
+        val cleanJson = if (rawJson.trim().startsWith("```")) {
+            rawJson.trim()
+                .substringAfter("```json")
+                .substringAfter("```")
+                .substringBeforeLast("```")
+                .trim()
+        } else {
+            rawJson.trim()
+        }
+
+        return gson.fromJson(cleanJson, AiPlanResponseDto::class.java)
     }
 }
