@@ -11,9 +11,9 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ListView
-import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.widget.NestedScrollView
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -80,8 +80,10 @@ class AddTripActivity : AppCompatActivity() {
     private var currentTimeline: List<TimelineDraft> = emptyList()
     private var airports: List<Airport> = emptyList()
     private var pendingPlaceTarget: PlaceSearchTarget? = null
+    private var isEditing = false
+    private var suppressTimelineScroll = true
 
-    private lateinit var scrollView: ScrollView
+    private lateinit var scrollView: NestedScrollView
     private lateinit var tripTitleInput: EditText
     private lateinit var rangeCalendar: RangeCalendarView
     private lateinit var monthTitle: TextView
@@ -144,7 +146,8 @@ class AddTripActivity : AppCompatActivity() {
 
         viewModel.dateRange.observe(this, ::renderDateRange)
         viewModel.timeline.observe(this) { timeline ->
-            val shouldScrollDown = timeline.size > currentTimeline.size
+            val shouldScrollDown = !suppressTimelineScroll && timeline.size > currentTimeline.size
+            suppressTimelineScroll = false
             currentTimeline = timeline
             timelineAdapter.submitList(timeline)
             if (shouldScrollDown) {
@@ -152,6 +155,24 @@ class AddTripActivity : AppCompatActivity() {
             }
         }
         viewModel.saveState.observe(this, ::renderSaveState)
+
+        setupEditMode()
+    }
+
+    private fun setupEditMode() {
+        val editTripId = intent.getLongExtra(IntentKeys.EXTRA_EDIT_TRIP_ID, -1L)
+        isEditing = editTripId > 0L
+        if (!isEditing) return
+
+        findViewById<TextView>(R.id.addTripTitle).setText(R.string.edit_trip_title)
+        findViewById<Button>(R.id.buttonSaveTrip).setText(R.string.button_update)
+        suppressTimelineScroll = true
+        viewModel.editTitle.observe(this) { title ->
+            if (title != null && tripTitleInput.text.toString() != title) {
+                tripTitleInput.setText(title)
+            }
+        }
+        viewModel.loadForEdit(editTripId)
     }
 
     private fun renderDateRange(range: DateRangeDraft) {
@@ -180,12 +201,13 @@ class AddTripActivity : AppCompatActivity() {
                 arrayOf(
                     getString(R.string.add_item_transport),
                     getString(R.string.add_item_photos),
+                    getString(R.string.add_item_accommodation),
                 ),
             ) { _, which ->
-                if (which == 0) {
-                    viewModel.addSegment()
-                } else {
-                    photoPicker.launch(
+                when (which) {
+                    0 -> viewModel.addSegment()
+                    2 -> viewModel.addAccommodation()
+                    else -> photoPicker.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                     )
                 }

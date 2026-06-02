@@ -12,10 +12,17 @@ interface TripRepository {
     fun observePhotos(tripId: Long): Flow<List<TravelPhoto>>
     suspend fun getTrip(tripId: Long): Trip?
     suspend fun getSegments(tripId: Long): List<TransportSegment>
+    suspend fun getPhotos(tripId: Long): List<TravelPhoto>
     suspend fun addTrip(
         trip: Trip,
         segments: List<TransportSegment>,
         photos: List<NewTravelPhoto>,
     ): Long
+    suspend fun updateTrip(
+        trip: Trip,
+        segments: List<TransportSegment>,
+        photos: List<NewTravelPhoto>,
+    )
+    suspend fun deleteTrip(tripId: Long)
     suspend fun updatePhotoComment(photoId: Long, comment: String?)
 }

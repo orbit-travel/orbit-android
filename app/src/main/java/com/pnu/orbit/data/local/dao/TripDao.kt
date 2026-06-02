@@ -32,4 +32,7 @@ interface TripDao {
 
     @Update
     suspend fun updateTrip(trip: TripEntity)
+
+    @Query("DELETE FROM trips WHERE id = :tripId")
+    suspend fun deleteTrip(tripId: Long)
 }

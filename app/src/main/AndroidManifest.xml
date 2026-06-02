@@ -25,9 +25,6 @@
             android:value="${MAPS_API_KEY}" />
 
         <activity
-            android:name=".ui.detail.TravelDetailActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.addtrip.PlaceSearchActivity"
             android:exported="false" />
         <activity

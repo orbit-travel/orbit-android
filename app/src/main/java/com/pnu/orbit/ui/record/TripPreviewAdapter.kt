@@ -10,6 +10,8 @@ import com.pnu.orbit.domain.model.Trip
 
 class TripPreviewAdapter(
     private val onTripClick: (Trip) -> Unit,
+    private val onEditClick: (Trip) -> Unit,
+    private val onDeleteClick: (Trip) -> Unit,
 ) : RecyclerView.Adapter<TripPreviewAdapter.ViewHolder>() {
     private val items = mutableListOf<Trip>()
 
@@ -21,7 +23,7 @@ class TripPreviewAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_trip, parent, false)
-        return ViewHolder(view, onTripClick)
+        return ViewHolder(view, onTripClick, onEditClick, onDeleteClick)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -33,9 +35,13 @@ class TripPreviewAdapter(
     class ViewHolder(
         itemView: View,
         private val onTripClick: (Trip) -> Unit,
+        private val onEditClick: (Trip) -> Unit,
+        private val onDeleteClick: (Trip) -> Unit,
     ) : RecyclerView.ViewHolder(itemView) {
         private val title: TextView = itemView.findViewById(R.id.tripTitle)
         private val subtitle: TextView = itemView.findViewById(R.id.tripSubtitle)
+        private val editButton: TextView = itemView.findViewById(R.id.buttonEditTrip)
+        private val deleteButton: TextView = itemView.findViewById(R.id.buttonDeleteTrip)
 
         fun bind(trip: Trip) {
             title.text = trip.title
@@ -46,6 +52,8 @@ class TripPreviewAdapter(
                 trip.memo ?: itemView.context.getString(R.string.trip_memo_empty),
             )
             itemView.setOnClickListener { onTripClick(trip) }
+            editButton.setOnClickListener { onEditClick(trip) }
+            deleteButton.setOnClickListener { onDeleteClick(trip) }
         }
     }
 }

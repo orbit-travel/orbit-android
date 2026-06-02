@@ -17,4 +17,5 @@ enum class TransportType {
     FLIGHT,
     TRAIN,
     CAR,
+    ACCOMMODATION,
 }

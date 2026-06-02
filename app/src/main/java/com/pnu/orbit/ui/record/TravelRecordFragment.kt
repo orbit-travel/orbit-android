@@ -12,17 +12,21 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
+import android.net.Uri
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -31,13 +35,18 @@ import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MapStyleOptions
+import com.bumptech.glide.Glide
 import com.pnu.orbit.BuildConfig
 import com.pnu.orbit.R
+import com.pnu.orbit.domain.model.TravelPhoto
 import com.pnu.orbit.domain.model.Trip
+import com.pnu.orbit.map.TripMapRenderer
 import com.pnu.orbit.ui.addtrip.AddTripActivity
 import com.pnu.orbit.ui.common.UiState
-import com.pnu.orbit.ui.detail.TravelDetailActivity
 import com.pnu.orbit.util.IntentKeys
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     private val viewModel: TravelRecordViewModel by viewModels()
@@ -51,19 +60,21 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     private lateinit var labelMy: TextView
     private lateinit var labelFriends: TextView
     private lateinit var labelWorld: TextView
+    private lateinit var photoDetailOverlay: View
+    private lateinit var photoDetailImage: ImageView
+    private lateinit var photoDetailComment: TextView
+    private lateinit var photoDetailDate: TextView
+    private lateinit var photoDetailPlace: TextView
     private var googleMap: GoogleMap? = null
+    private var tripMapRenderer: TripMapRenderer? = null
+    private var selectedTripId: Long? = null
+    private var pendingTrip: Trip? = null
     private var selectedEarth = EarthSelection.MY
     private var currentLocationTarget: LatLng? = null
     private var activeLocationListener: LocationListener? = null
     private var hasRequestedLocationPermission = false
 
     private val addTripLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult(),
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) Unit
-    }
-
-    private val detailLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult(),
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) Unit
@@ -106,7 +117,17 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         labelMy = view.findViewById(R.id.labelMy)
         labelFriends = view.findViewById(R.id.labelFriends)
         labelWorld = view.findViewById(R.id.labelWorld)
-        adapter = TripPreviewAdapter { trip -> openDetail(trip) }
+        photoDetailOverlay = view.findViewById(R.id.photoDetailOverlay)
+        photoDetailImage = view.findViewById(R.id.photoDetailImage)
+        photoDetailComment = view.findViewById(R.id.photoDetailComment)
+        photoDetailDate = view.findViewById(R.id.photoDetailDate)
+        photoDetailPlace = view.findViewById(R.id.photoDetailPlace)
+        photoDetailOverlay.setOnClickListener { hidePhotoDetail() }
+        adapter = TripPreviewAdapter(
+            onTripClick = { trip -> onTripSelected(trip) },
+            onEditClick = { trip -> launchEdit(trip) },
+            onDeleteClick = { trip -> confirmDelete(trip) },
+        )
 
         tripRecyclerView = view.findViewById<RecyclerView>(R.id.tripRecyclerView).apply {
             layoutManager = LinearLayoutManager(requireContext())
@@ -141,6 +162,8 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
 
     override fun onDestroyView() {
         removeActiveLocationListener()
+        tripMapRenderer?.clear()
+        tripMapRenderer = null
         googleMap = null
         super.onDestroyView()
     }
@@ -161,7 +184,17 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         } else {
             View.GONE
         }
-        if (hasLocationPermission()) {
+
+        tripMapRenderer = TripMapRenderer(requireContext(), map, viewLifecycleOwner.lifecycleScope).apply {
+            onPhotoClick = { photo -> togglePhotoDetail(photo) }
+        }
+        map.setOnMapClickListener { hidePhotoDetail() }
+
+        val tripToRender = pendingTrip
+        if (tripToRender != null) {
+            pendingTrip = null
+            renderTripOnMap(tripToRender)
+        } else if (hasLocationPermission()) {
             refreshCurrentLocation()
         } else {
             moveMapToSelectedEarth(animate = false)
@@ -212,6 +245,11 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
 
     private fun selectEarth(selection: EarthSelection, earthView: View) {
         selectedEarth = selection
+        selectedTripId = null
+        pendingTrip = null
+        tripMapRenderer?.clear()
+        hidePhotoDetail()
+        hideTripListForMap()
         updateEarthLabels()
 
         earthView.animate()
@@ -278,6 +316,10 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun toggleTripList() {
+        if (selectedEarth != EarthSelection.MY) {
+            Toast.makeText(requireContext(), R.string.record_friends_world_soon, Toast.LENGTH_SHORT).show()
+            return
+        }
         if (tripRecyclerView.visibility == View.VISIBLE) {
             tripRecyclerView.animate()
                 .alpha(0f)
@@ -315,6 +357,7 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun moveMapToSelectedEarth(animate: Boolean) {
+        if (selectedTripId != null) return
         val map = googleMap ?: return
         val cameraTarget = currentLocationTarget ?: selectedEarth.cameraTarget
         val cameraUpdate = CameraUpdateFactory.newLatLngZoom(cameraTarget, selectedEarth.zoom)
@@ -429,12 +472,93 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         activeLocationListener = null
     }
 
-    private fun openDetail(trip: Trip) {
-        val intent = Intent(requireContext(), TravelDetailActivity::class.java)
-            .putExtra(IntentKeys.EXTRA_TRIP_ID, trip.id)
-            .putExtra(IntentKeys.EXTRA_TRIP_TITLE, trip.title)
-            .putExtra(IntentKeys.EXTRA_TRIP_DESTINATION, trip.destination)
-        detailLauncher.launch(intent)
+    private fun onTripSelected(trip: Trip) {
+        selectedTripId = trip.id
+        hidePhotoDetail()
+        unfoldMapPanel()
+        hideTripListForMap()
+        renderTripOnMap(trip)
+    }
+
+    private fun renderTripOnMap(trip: Trip) {
+        val renderer = tripMapRenderer
+        if (renderer == null) {
+            pendingTrip = trip
+            return
+        }
+        viewModel.loadTripGeometry(trip.id) { segments, photos ->
+            if (selectedTripId == trip.id) {
+                renderer.render(segments, photos, trip.destination)
+            }
+        }
+    }
+
+    private fun togglePhotoDetail(photo: TravelPhoto) {
+        if (photoDetailOverlay.visibility == View.VISIBLE) {
+            hidePhotoDetail()
+        } else {
+            showPhotoDetail(photo)
+        }
+    }
+
+    private fun showPhotoDetail(photo: TravelPhoto) {
+        Glide.with(this).load(Uri.parse(photo.uri)).fitCenter().into(photoDetailImage)
+        photoDetailComment.text = photo.comment?.takeIf { it.isNotBlank() }.orEmpty()
+        photoDetailComment.visibility = if (photoDetailComment.text.isNullOrBlank()) View.GONE else View.VISIBLE
+        photoDetailDate.text = photo.takenAt?.let {
+            getString(R.string.photo_detail_date, detailDateFormat.format(Date(it)))
+        } ?: getString(R.string.photo_detail_no_date)
+        photoDetailPlace.text = photo.locationName?.takeIf { it.isNotBlank() }?.let {
+            getString(R.string.photo_detail_place, it)
+        } ?: getString(R.string.photo_detail_no_place)
+
+        photoDetailOverlay.alpha = 0f
+        photoDetailOverlay.visibility = View.VISIBLE
+        photoDetailOverlay.animate().alpha(1f).setDuration(180L).start()
+    }
+
+    private fun hidePhotoDetail() {
+        if (photoDetailOverlay.visibility != View.VISIBLE) return
+        photoDetailOverlay.animate()
+            .alpha(0f)
+            .setDuration(150L)
+            .withEndAction { photoDetailOverlay.visibility = View.GONE }
+            .start()
+    }
+
+    private fun hideTripListForMap() {
+        if (tripRecyclerView.visibility != View.VISIBLE) return
+        tripRecyclerView.animate()
+            .alpha(0f)
+            .translationY(16f)
+            .setDuration(180L)
+            .withEndAction {
+                tripRecyclerView.visibility = View.GONE
+                toggleTripsButton.setText(R.string.travel_list)
+            }
+            .start()
+    }
+
+    private fun launchEdit(trip: Trip) {
+        val intent = Intent(requireContext(), AddTripActivity::class.java)
+            .putExtra(IntentKeys.EXTRA_EDIT_TRIP_ID, trip.id)
+        addTripLauncher.launch(intent)
+    }
+
+    private fun confirmDelete(trip: Trip) {
+        AlertDialog.Builder(requireContext())
+            .setTitle(R.string.trip_delete_confirm_title)
+            .setMessage(getString(R.string.trip_delete_confirm_message, trip.title))
+            .setNegativeButton(R.string.button_cancel, null)
+            .setPositiveButton(R.string.trip_action_delete) { _, _ ->
+                if (selectedTripId == trip.id) {
+                    tripMapRenderer?.clear()
+                    selectedTripId = null
+                }
+                viewModel.deleteTrip(trip.id)
+                Toast.makeText(requireContext(), R.string.trip_deleted, Toast.LENGTH_SHORT).show()
+            }
+            .show()
     }
 
     private enum class EarthSelection(
@@ -450,6 +574,7 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     companion object {
         private const val TAG = "TravelRecordFragment"
         private const val STATE_LOCATION_PERMISSION_REQUESTED = "state_location_permission_requested"
+        private val detailDateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
         private val LOCATION_PERMISSIONS = arrayOf(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,

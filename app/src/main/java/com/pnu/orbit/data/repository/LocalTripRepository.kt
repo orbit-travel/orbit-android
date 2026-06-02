@@ -34,17 +34,44 @@ class LocalTripRepository(
     override suspend fun getSegments(tripId: Long): List<TransportSegment> =
         transportSegmentDao.getSegments(tripId).map { it.toDomain() }
 
+    override suspend fun getPhotos(tripId: Long): List<TravelPhoto> =
+        photoDao.getPhotos(tripId).map { it.toDomain() }
+
     override suspend fun addTrip(
         trip: Trip,
         segments: List<TransportSegment>,
         photos: List<NewTravelPhoto>,
     ): Long {
         val newTripId = tripDao.insertTrip(trip.copy(id = 0L).toEntity())
+        insertSegmentsAndPhotos(newTripId, segments, photos)
+        return newTripId
+    }
+
+    override suspend fun updateTrip(
+        trip: Trip,
+        segments: List<TransportSegment>,
+        photos: List<NewTravelPhoto>,
+    ) {
+        tripDao.updateTrip(trip.toEntity())
+        transportSegmentDao.deleteSegments(trip.id)
+        photoDao.deletePhotos(trip.id)
+        insertSegmentsAndPhotos(trip.id, segments, photos)
+    }
+
+    override suspend fun deleteTrip(tripId: Long) {
+        tripDao.deleteTrip(tripId)
+    }
+
+    private suspend fun insertSegmentsAndPhotos(
+        tripId: Long,
+        segments: List<TransportSegment>,
+        photos: List<NewTravelPhoto>,
+    ) {
         val segmentIds = if (segments.isNotEmpty()) {
             transportSegmentDao.insertSegments(
                 segments.mapIndexed { index, segment ->
-                    segment.copy(id = 0L, tripId = newTripId, sortOrder = index)
-                        .toEntity(tripIdOverride = newTripId)
+                    segment.copy(id = 0L, tripId = tripId, sortOrder = index)
+                        .toEntity(tripIdOverride = tripId)
                 },
             )
         } else {
@@ -56,11 +83,10 @@ class LocalTripRepository(
                     val segmentId = photo.segmentSortOrder
                         ?.takeIf { it in segmentIds.indices }
                         ?.let { segmentIds[it] }
-                    photo.toEntity(tripId = newTripId, segmentId = segmentId)
+                    photo.toEntity(tripId = tripId, segmentId = segmentId)
                 },
             )
         }
-        return newTripId
     }
 
     override suspend fun updatePhotoComment(photoId: Long, comment: String?) {

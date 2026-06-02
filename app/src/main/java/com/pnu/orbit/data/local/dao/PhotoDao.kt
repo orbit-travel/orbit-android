@@ -13,6 +13,9 @@ interface PhotoDao {
     @Query("SELECT * FROM photos WHERE tripId = :tripId ORDER BY takenAt IS NULL, takenAt ASC")
     fun observePhotos(tripId: Long): Flow<List<PhotoEntity>>
 
+    @Query("SELECT * FROM photos WHERE tripId = :tripId ORDER BY takenAt IS NULL, takenAt ASC")
+    suspend fun getPhotos(tripId: Long): List<PhotoEntity>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPhotos(photos: List<PhotoEntity>)
 
@@ -21,4 +24,7 @@ interface PhotoDao {
 
     @Query("UPDATE photos SET comment = :comment WHERE id = :photoId")
     suspend fun updateComment(photoId: Long, comment: String?)
+
+    @Query("DELETE FROM photos WHERE tripId = :tripId")
+    suspend fun deletePhotos(tripId: Long)
 }

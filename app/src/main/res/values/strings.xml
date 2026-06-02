@@ -11,6 +11,8 @@
     <string name="splash_subtitle">travel memories around my earth</string>
 
     <string name="add_trip_title">New Trip</string>
+    <string name="edit_trip_title">Edit Trip</string>
+    <string name="button_update">Update</string>
     <string name="trip_title_hint">Trip title</string>
     <string name="start_place_hint">Start place</string>
     <string name="destination_hint">Destination</string>
@@ -85,6 +87,11 @@
     <string name="record_error_load">Could not load trips.</string>
     <string name="trip_subtitle">%1$s | photos %2$d | %3$s</string>
     <string name="trip_memo_empty">No memo</string>
+    <string name="trip_action_edit">Edit</string>
+    <string name="trip_action_delete">Delete</string>
+    <string name="trip_delete_confirm_title">Delete trip</string>
+    <string name="trip_delete_confirm_message">Delete \"%1$s\"? This cannot be undone.</string>
+    <string name="trip_deleted">Trip deleted.</string>
 
     <string name="planner_destination_hint">Destination</string>
     <string name="planner_days_hint">Days</string>
@@ -106,4 +113,13 @@
     <string name="detail_photo_summary">Photo %1$d: %2$s</string>
     <string name="detail_photo_unlocated">Unlocated photo</string>
     <string name="record_map_key_missing">Google satellite map\nAdd MAPS_API_KEY in local.properties</string>
+    <string name="record_friends_world_soon">Friends and World are coming soon.</string>
+    <string name="add_item_accommodation">Accommodation</string>
+    <string name="segment_stay_label">Stay %1$d</string>
+    <string name="segment_place_empty">Select place</string>
+    <string name="segment_place_selected">Place: %1$s</string>
+    <string name="photo_detail_date">Taken: %1$s</string>
+    <string name="photo_detail_place">Location: %1$s</string>
+    <string name="photo_detail_no_date">Date unknown</string>
+    <string name="photo_detail_no_place">No location</string>
 </resources>

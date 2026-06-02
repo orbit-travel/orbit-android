@@ -17,4 +17,7 @@ interface TransportSegmentDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSegments(segments: List<TransportSegmentEntity>): List<Long>
+
+    @Query("DELETE FROM transport_segments WHERE tripId = :tripId")
+    suspend fun deleteSegments(tripId: Long)
 }

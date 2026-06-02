@@ -113,28 +113,39 @@ class TripTimelineAdapter(
 
         fun bind(segment: TransportSegmentDraft, segmentIndex: Int, segmentCount: Int) {
             val context = itemView.context
-            title.text = context.getString(R.string.segment_label, segmentIndex)
             group.setOnCheckedChangeListener(null)
-            when (segment.type) {
-                TransportType.FLIGHT -> radioFlight.isChecked = true
-                TransportType.TRAIN -> radioTrain.isChecked = true
-                TransportType.CAR -> radioCar.isChecked = true
-            }
-            group.setOnCheckedChangeListener { _, checkedId ->
-                val type = when (checkedId) {
-                    R.id.radioTrain -> TransportType.TRAIN
-                    R.id.radioCar -> TransportType.CAR
-                    else -> TransportType.FLIGHT
-                }
-                callbacks.onTransportTypeChanged(segment.copy(type = type))
-            }
 
-            departure.text = segment.departureName.takeIf { it.isNotBlank() }?.let {
-                context.getString(R.string.segment_departure_selected, it)
-            } ?: context.getString(R.string.segment_departure_empty)
-            arrival.text = segment.arrivalName.takeIf { it.isNotBlank() }?.let {
-                context.getString(R.string.segment_arrival_selected, it)
-            } ?: context.getString(R.string.segment_arrival_empty)
+            if (segment.type == TransportType.ACCOMMODATION) {
+                title.text = context.getString(R.string.segment_stay_label, segmentIndex)
+                group.visibility = View.GONE
+                arrival.visibility = View.GONE
+                departure.text = segment.departureName.takeIf { it.isNotBlank() }?.let {
+                    context.getString(R.string.segment_place_selected, it)
+                } ?: context.getString(R.string.segment_place_empty)
+            } else {
+                title.text = context.getString(R.string.segment_label, segmentIndex)
+                group.visibility = View.VISIBLE
+                arrival.visibility = View.VISIBLE
+                when (segment.type) {
+                    TransportType.TRAIN -> radioTrain.isChecked = true
+                    TransportType.CAR -> radioCar.isChecked = true
+                    else -> radioFlight.isChecked = true
+                }
+                group.setOnCheckedChangeListener { _, checkedId ->
+                    val type = when (checkedId) {
+                        R.id.radioTrain -> TransportType.TRAIN
+                        R.id.radioCar -> TransportType.CAR
+                        else -> TransportType.FLIGHT
+                    }
+                    callbacks.onTransportTypeChanged(segment.copy(type = type))
+                }
+                departure.text = segment.departureName.takeIf { it.isNotBlank() }?.let {
+                    context.getString(R.string.segment_departure_selected, it)
+                } ?: context.getString(R.string.segment_departure_empty)
+                arrival.text = segment.arrivalName.takeIf { it.isNotBlank() }?.let {
+                    context.getString(R.string.segment_arrival_selected, it)
+                } ?: context.getString(R.string.segment_arrival_empty)
+            }
 
             departure.setOnClickListener {
                 callbacks.onTransportEndpointRequested(segment, isDeparture = true)
