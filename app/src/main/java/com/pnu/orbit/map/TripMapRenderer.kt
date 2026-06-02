@@ -1,5 +1,7 @@
 package com.pnu.orbit.map
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Bitmap
@@ -50,9 +52,11 @@ import kotlin.math.sqrt
  * Draws a trip onto an existing [GoogleMap]:
  *  - transport legs as mode-coloured lines (flight = sky-blue dashed) with a moving mode icon,
  *  - accommodations as hotel pins,
- *  - photos as small stacked cards that fan out on tap and open a detail view via [onPhotoClick],
+ *  - photos as small stacked cards that fan out on tap (the stacked card hides while expanded and
+ *    the cards merge back into it on the next camera move) and open a detail view via [onPhotoClick],
  *  - the whole itinerary linked in order by a thin yellow route with a soft light pulse that
- *    repeatedly travels the path so the visiting order reads at a glance.
+ *    repeatedly travels the path so the visiting order reads at a glance; the pulse skips straight
+ *    across flight legs instead of tracing the flight arc.
  * Marker and line sizes scale with the current zoom level.
  */
 class TripMapRenderer(
@@ -66,10 +70,12 @@ class TripMapRenderer(
     private val scalables = mutableListOf<Scalable>()
     private val polylineInfos = mutableListOf<PolyInfo>()
     private val animators = mutableListOf<ValueAnimator>()
+    private val fanAnimators = mutableListOf<ValueAnimator>()
     private val groupByMarker = mutableMapOf<Marker, PhotoGroup>()
     private val fannedPhotoByMarker = mutableMapOf<Marker, TravelPhoto>()
     private val fannedMarkers = mutableListOf<Marker>()
     private var expandedGroup: PhotoGroup? = null
+    private var expandedMarker: Marker? = null
     private var photoBitmaps: Map<String, Bitmap?> = emptyMap()
     private var renderJob: Job? = null
     private var currentScale = 1f
@@ -89,10 +95,13 @@ class TripMapRenderer(
         renderJob = null
         animators.forEach { it.cancel() }
         animators.clear()
+        fanAnimators.forEach { it.cancel() }
+        fanAnimators.clear()
         fannedMarkers.forEach { it.remove() }
         fannedMarkers.clear()
         fannedPhotoByMarker.clear()
         expandedGroup = null
+        expandedMarker = null
         scalables.forEach { it.marker.remove() }
         scalables.clear()
         polylineInfos.forEach { it.polyline.remove() }
@@ -122,11 +131,14 @@ class TripMapRenderer(
 
             val orderedPoints = mutableListOf<LatLng>()
             val skipNextYellow = mutableListOf<Boolean>()
+            // flightLeg[i] == true means the leg from orderedPoints[i] to [i+1] is a flight.
+            val flightLeg = mutableListOf<Boolean>()
             val cameraPoints = mutableListOf<LatLng>()
 
-            fun addPoint(point: LatLng, transportInternal: Boolean) {
+            fun addPoint(point: LatLng, transportInternal: Boolean, flight: Boolean = false) {
                 orderedPoints.add(point)
                 skipNextYellow.add(transportInternal)
+                flightLeg.add(flight)
                 cameraPoints.add(point)
             }
 
@@ -149,8 +161,8 @@ class TripMapRenderer(
                     val end = segment.arrivalLatLng()
                         ?: PlaceCoordinateResolver.resolve(segment.arrivalName.ifBlank { fallbackDestination })
                     drawTransportLeg(segment.type, start, end)
-                    addPoint(start, true)
-                    addPoint(end, false)
+                    addPoint(start, transportInternal = true, flight = segment.type == TransportType.FLIGHT)
+                    addPoint(end, transportInternal = false)
                 }
                 photosBySegment[segment.id]?.sortedBy { it.takenAt ?: Long.MAX_VALUE }?.forEach { photo ->
                     locations[photo.id]?.let { addPoint(it, false) }
@@ -158,7 +170,7 @@ class TripMapRenderer(
             }
 
             drawYellowConnectors(orderedPoints, skipNextYellow)
-            startRoutePulse(orderedPoints)
+            startRoutePulse(orderedPoints, flightLeg)
             renderPhotoGroups(groups)
             groups.forEach { cameraPoints.add(it.center) }
 
@@ -268,7 +280,7 @@ class TripMapRenderer(
         }
     }
 
-    private fun startRoutePulse(points: List<LatLng>) {
+    private fun startRoutePulse(points: List<LatLng>, flightLeg: List<Boolean>) {
         if (points.size < 2) return
         // Build a continuous, unwrapped path so the pulse moves smoothly across the antimeridian.
         val latArr = DoubleArray(points.size)
@@ -279,9 +291,16 @@ class TripMapRenderer(
             latArr[i] = points[i].latitude
             lngArr[i] = unwrapLng(lngArr[i - 1], points[i].longitude)
         }
+        // Flight legs contribute zero length so the pulse skips straight across them instead of
+        // tracing the flight arc; the moving plane icon already conveys the flight itself.
         val cum = DoubleArray(points.size)
         for (i in 1 until points.size) {
-            cum[i] = cum[i - 1] + haversine(latArr[i - 1], lngArr[i - 1], latArr[i], lngArr[i])
+            val legLength = if (flightLeg.getOrElse(i - 1) { false }) {
+                0.0
+            } else {
+                haversine(latArr[i - 1], lngArr[i - 1], latArr[i], lngArr[i])
+            }
+            cum[i] = cum[i - 1] + legLength
         }
         val total = cum.last()
         if (total <= 0.0) return
@@ -342,7 +361,7 @@ class TripMapRenderer(
             val group = groupByMarker[marker]
             when {
                 group != null && group.photos.size == 1 -> onPhotoClick?.invoke(group.photos.first())
-                group != null -> if (expandedGroup == group) collapseFan() else expandFan(group)
+                group != null -> if (expandedGroup == group) collapseFan() else expandFan(marker, group)
                 else -> fannedPhotoByMarker[marker]?.let { onPhotoClick?.invoke(it) }
             }
             true
@@ -357,9 +376,12 @@ class TripMapRenderer(
         }
     }
 
-    private fun expandFan(group: PhotoGroup) {
+    private fun expandFan(marker: Marker, group: PhotoGroup) {
         collapseFan()
         expandedGroup = group
+        expandedMarker = marker
+        // Hide the stacked card so only the unfolded originals are visible while expanded.
+        runCatching { marker.isVisible = false }
         val projection = map.projection
         val center = projection.toScreenLocation(group.center)
         val count = group.photos.size
@@ -395,19 +417,51 @@ class TripMapRenderer(
                     }
                 }
                 start()
-            }.also { animators.add(it) }
+            }.also { fanAnimators.add(it) }
         }
     }
 
     private fun collapseFan() {
-        if (fannedMarkers.isEmpty()) {
-            expandedGroup = null
-            return
-        }
-        fannedMarkers.forEach { it.remove() }
+        // Stop any in-flight fan animation so it can't fight the collapse over marker positions.
+        fanAnimators.forEach { it.cancel() }
+        fanAnimators.clear()
+        val markers = fannedMarkers.toList()
+        val center = expandedGroup?.center
+        val stackMarker = expandedMarker
+        // Reset state up front so a re-entrant expand/collapse during the animation stays consistent.
         fannedMarkers.clear()
         fannedPhotoByMarker.clear()
         expandedGroup = null
+        expandedMarker = null
+        // Bring the stacked card back so the fanned cards visually merge into it.
+        runCatching { stackMarker?.isVisible = true }
+        if (markers.isEmpty()) return
+        if (center == null) {
+            markers.forEach { runCatching { it.remove() } }
+            return
+        }
+        markers.forEach { child ->
+            val from = child.position
+            ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = 200L
+                interpolator = LinearInterpolator()
+                addUpdateListener { va ->
+                    val t = va.animatedValue as Float
+                    runCatching {
+                        child.position = LatLng(
+                            from.latitude + (center.latitude - from.latitude) * t,
+                            from.longitude + (center.longitude - from.longitude) * t,
+                        )
+                    }
+                }
+                addListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        runCatching { child.remove() }
+                    }
+                })
+                start()
+            }.also { fanAnimators.add(it) }
+        }
     }
 
     private fun resolvePhotoLocations(
