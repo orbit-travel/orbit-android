@@ -33,11 +33,11 @@ class TravelPlannerFragment : Fragment() {
             val destination = view.findViewById<EditText>(R.id.inputDestination).text.toString()
             val days = view.findViewById<EditText>(R.id.inputDays).text.toString().toIntOrNull() ?: 1
             val style = view.findViewById<EditText>(R.id.inputStyle).text.toString()
-            viewModel.generateFallbackPlan(destination, days, style)
+            viewModel.generatePlan(destination, days, style)
         }
 
         viewModel.plan.observe(viewLifecycleOwner) { state -> renderState(state) }
-        viewModel.generateFallbackPlan(destination = "Busan", days = 2, style = "culture")
+        viewModel.generatePlan(destination = "Busan", days = 2, style = "culture")
     }
 
     private fun renderState(state: UiState<TravelPlan>) {

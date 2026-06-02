@@ -16,9 +16,12 @@ object RepositoryProvider {
 
     fun plannerRepository(context: Context): PlannerRepository {
         val database = OrbitDatabase.getInstance(context)
+        val geminiApi = RetrofitClient.geminiApi
+        val apiKey = com.pnu.orbit.BuildConfig.GEMINI_API_KEY
+        val aiPlanner = com.pnu.orbit.data.remote.api.GeminiPlannerApi(geminiApi, apiKey)
         return LocalPlannerRepository(
             planDao = database.planDao(),
-            aiPlannerApi = RetrofitClient.aiPlannerApi,
+            aiPlannerApi = aiPlanner,
         )
     }
 
