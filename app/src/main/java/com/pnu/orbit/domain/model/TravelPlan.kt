@@ -12,8 +12,14 @@ data class TravelPlan(
 
 data class DayPlan(
     val day: Int,
-    val morning: String,
-    val lunch: String,
-    val afternoon: String,
-    val evening: String,
+    val attractions: List<Attraction>,
+)
+
+data class Attraction(
+    val sequence: Int,
+    val name: String,
+    val description: String,
+    val imageUrl: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )

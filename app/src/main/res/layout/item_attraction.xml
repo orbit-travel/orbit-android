@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingTop="12dp"
+    android:paddingBottom="12dp"
+    android:gravity="top">
+
+    <!-- Left Side: Photo Container with CardView for rounded corners -->
+    <androidx.cardview.widget.CardView
+        android:layout_width="100dp"
+        android:layout_height="75dp"
+        android:layout_marginEnd="12dp"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        app:cardCornerRadius="8dp"
+        app:cardBackgroundColor="@color/orbit_surface_light"
+        app:cardElevation="0dp">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/attractionImage"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                android:contentDescription="@string/section_photos" />
+
+            <!-- Sequence Badge Overlaid on top-left -->
+            <TextView
+                android:id="@+id/attractionSequence"
+                android:layout_width="22dp"
+                android:layout_height="22dp"
+                android:layout_gravity="start|top"
+                android:layout_margin="4dp"
+                android:background="@drawable/bg_attraction_sequence"
+                android:gravity="center"
+                android:textColor="@color/orbit_space"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </FrameLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Right Side: Details -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <!-- Attraction Name -->
+        <TextView
+            android:id="@+id/attractionName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <!-- Attraction Description -->
+        <TextView
+            android:id="@+id/attractionDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/orbit_text_secondary"
+            android:textSize="13sp"
+            android:lineSpacingExtra="2dp" />
+    </LinearLayout>
+</LinearLayout>

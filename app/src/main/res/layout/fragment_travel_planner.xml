@@ -77,6 +77,34 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/buttonGeneratePlan" />
 
+    <FrameLayout
+        android:id="@+id/plannerMapPanel"
+        android:layout_width="0dp"
+        android:layout_height="200dp"
+        android:layout_marginTop="12dp"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/plannerStatus">
+
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/plannerMapFragmentContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <TextView
+            android:id="@+id/plannerMapKeyPlaceholder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/orbit_surface_light"
+            android:gravity="center"
+            android:padding="18dp"
+            android:text="@string/record_map_key_missing"
+            android:textAlignment="center"
+            android:textColor="@color/orbit_text_secondary"
+            android:textSize="13sp" />
+    </FrameLayout>
+
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/dayPlanPager"
         android:layout_width="0dp"
@@ -85,5 +113,5 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/plannerStatus" />
+        app:layout_constraintTop_toBottomOf="@id/plannerMapPanel" />
 </androidx.constraintlayout.widget.ConstraintLayout>
