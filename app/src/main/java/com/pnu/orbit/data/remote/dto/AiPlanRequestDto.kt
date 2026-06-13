@@ -7,4 +7,6 @@ data class AiPlanRequestDto(
     val companionType: String?,
     val budget: String?,
     val pace: String?,
+    val latitude: Double?,
+    val longitude: Double?,
 )

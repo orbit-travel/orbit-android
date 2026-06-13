@@ -14,4 +14,10 @@ interface PlanDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPlan(plan: PlanEntity): Long
+
+    @Query("SELECT * FROM plans")
+    suspend fun getAllPlans(): List<PlanEntity>
+
+    @Query("DELETE FROM plans WHERE id = :id")
+    suspend fun deletePlanById(id: Long)
 }
