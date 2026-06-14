@@ -21,11 +21,13 @@ class TravelPlannerFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        viewModel.plan.observe(viewLifecycleOwner) { state ->
-            if (state is UiState.Success) {
-                showChildFragment(GeneratedItemFragment())
-            } else {
-                showChildFragment(GeneratingPlanFragment())
+        viewModel.navigationState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                PlannerNavigation.CALENDAR -> showChildFragment(TravelCalendarFragment())
+                PlannerNavigation.GENERATING -> showChildFragment(GeneratingPlanFragment())
+                PlannerNavigation.GENERATED -> showChildFragment(GeneratedItemFragment())
+                PlannerNavigation.CONFIRM -> showChildFragment(CalendarConfirmFragment())
+                else -> showChildFragment(TravelCalendarFragment())
             }
         }
     }

@@ -56,15 +56,12 @@ class RecommendationCardAdapter(
             name.text = attraction.name
             description.text = attraction.description
 
-            val fallbackUrl = "https://loremflickr.com/640/480/travel,${attraction.name.replace(" ", "")}"
-            val imageUrlToLoad = attraction.imageUrl?.takeIf { it.isNotBlank() } ?: fallbackUrl
+            val category = determineCategory(attraction.name, attraction.description)
+            val details = getCategoryDetails(category)
 
-            Glide.with(itemView.context)
-                .load(imageUrlToLoad)
-                .placeholder(R.color.orbit_surface_light)
-                .error(R.color.orbit_surface_light)
-                .centerCrop()
-                .into(image)
+            image.setImageResource(details.first)
+            image.setColorFilter(details.second)
+            name.setTextColor(details.second)
 
             // Render select state
             if (isSelected) {

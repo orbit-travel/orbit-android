@@ -16,6 +16,7 @@ object RetrofitClient {
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(DEMO_BASE_URL)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
@@ -53,8 +54,9 @@ object RetrofitClient {
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(RateLimitRetryInterceptor())
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 

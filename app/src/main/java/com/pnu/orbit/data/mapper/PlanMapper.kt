@@ -2,11 +2,13 @@ package com.pnu.orbit.data.mapper
 
 import com.google.gson.Gson
 import com.pnu.orbit.data.local.entity.PlanEntity
+import com.pnu.orbit.data.local.entity.SavedTravelPlanEntity
 import com.pnu.orbit.data.remote.dto.AiPlanResponseDto
 import com.pnu.orbit.data.remote.dto.AttractionDto
 import com.pnu.orbit.data.remote.dto.DayPlanDto
 import com.pnu.orbit.domain.model.Attraction
 import com.pnu.orbit.domain.model.DayPlan
+import com.pnu.orbit.domain.model.TimeType
 import com.pnu.orbit.domain.model.TravelPlan
 
 private val gson = Gson()
@@ -61,6 +63,12 @@ fun PlanEntity.toDomain(): TravelPlan =
                 val attrArray = dayObj.getAsJsonArray("attractions")
                 attrArray.forEach { attrElement ->
                     val attrObj = attrElement.asJsonObject
+                    val timeTypeStr = attrObj.get("timeType")?.let { if (it.isJsonNull) null else it.asString }
+                    val timeType = if (timeTypeStr != null) {
+                        runCatching { TimeType.valueOf(timeTypeStr) }.getOrDefault(TimeType.NONE)
+                    } else {
+                        TimeType.NONE
+                    }
                     attractions.add(
                         Attraction(
                             sequence = attrObj.get("sequence").asInt,
@@ -68,7 +76,11 @@ fun PlanEntity.toDomain(): TravelPlan =
                             description = attrObj.get("description").asString,
                             imageUrl = attrObj.get("imageUrl")?.let { if (it.isJsonNull) null else it.asString },
                             latitude = attrObj.get("latitude")?.let { if (it.isJsonNull) null else it.asDouble },
-                            longitude = attrObj.get("longitude")?.let { if (it.isJsonNull) null else it.asDouble }
+                            longitude = attrObj.get("longitude")?.let { if (it.isJsonNull) null else it.asDouble },
+                            timeType = timeType,
+                            preciseStartTime = attrObj.get("preciseStartTime")?.let { if (it.isJsonNull) null else it.asString },
+                            preciseEndTime = attrObj.get("preciseEndTime")?.let { if (it.isJsonNull) null else it.asString },
+                            approxHours = attrObj.get("approxHours")?.let { if (it.isJsonNull) null else it.asDouble }
                         )
                     )
                 }
@@ -120,3 +132,23 @@ fun PlanEntity.toDomain(): TravelPlan =
             isFallback = true,
         )
     }
+
+fun TravelPlan.toSavedEntity(startDate: String): SavedTravelPlanEntity = SavedTravelPlanEntity(
+    id = id,
+    destination = destination,
+    days = days,
+    style = style,
+    planJson = gson.toJson(this),
+    startDate = startDate,
+    createdAt = createdAt
+)
+
+fun SavedTravelPlanEntity.toDomain(): TravelPlan =
+    PlanEntity(
+        id = id,
+        destination = destination,
+        days = days,
+        style = style,
+        planJson = planJson,
+        createdAt = createdAt
+    ).toDomain()

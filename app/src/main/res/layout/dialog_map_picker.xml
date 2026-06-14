@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp"
+    android:background="@color/orbit_surface">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="지도를 탭하여 위치를 선택하세요"
+        android:textColor="@color/orbit_text_secondary"
+        android:textSize="12sp"
+        android:gravity="center"
+        android:padding="8dp" />
+
+    <com.google.android.gms.maps.MapView
+        android:id="@+id/mapPickerView"
+        android:layout_width="match_parent"
+        android:layout_height="300dp" />
+</LinearLayout>

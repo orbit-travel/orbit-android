@@ -28,7 +28,8 @@
                 android:id="@+id/recommendationImage"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:scaleType="centerCrop"
+                android:scaleType="centerInside"
+                android:padding="32dp"
                 android:src="@android:drawable/ic_menu_gallery"
                 android:contentDescription="Recommendation Image" />
         </androidx.cardview.widget.CardView>

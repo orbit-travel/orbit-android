@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="@color/orbit_surface">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="새로운 장소 추가"
+        android:textColor="@color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Name input -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="장소 이름"
+        android:textColor="@color/orbit_text_secondary"
+        android:textSize="12sp"
+        android:layout_marginBottom="4dp" />
+
+    <EditText
+        android:id="@+id/etPlaceName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="예: 광안리 해수욕장, 스타벅스"
+        android:textColorHint="#55667F"
+        android:textColor="@color/white"
+        android:backgroundTint="@color/orbit_primary"
+        android:inputType="text"
+        android:maxLines="1"
+        android:layout_marginBottom="12dp" />
+
+    <!-- Category spinner -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="장소 카테고리"
+        android:textColor="@color/orbit_text_secondary"
+        android:textSize="12sp"
+        android:layout_marginBottom="4dp" />
+
+    <Spinner
+        android:id="@+id/spPlaceCategory"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:backgroundTint="@color/orbit_primary"
+        android:layout_marginBottom="16dp" />
+
+    <!-- Location inputs -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="위치 좌표 (위도 / 경도)"
+        android:textColor="@color/orbit_text_secondary"
+        android:textSize="12sp"
+        android:layout_marginBottom="4dp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/etPlaceLatitude"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="위도"
+            android:textColorHint="#55667F"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/orbit_primary"
+            android:inputType="numberDecimal|numberSigned" />
+
+        <EditText
+            android:id="@+id/etPlaceLongitude"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:hint="경도"
+            android:textColorHint="#55667F"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/orbit_primary"
+            android:inputType="numberDecimal|numberSigned" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/btnPickOnMap"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="지도에서 위치 선택"
+        android:backgroundTint="@color/orbit_primary"
+        android:textColor="@color/orbit_space"
+        android:textStyle="bold" />
+</LinearLayout>

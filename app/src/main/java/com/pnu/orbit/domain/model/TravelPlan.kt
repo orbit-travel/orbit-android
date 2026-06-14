@@ -15,6 +15,10 @@ data class DayPlan(
     val attractions: List<Attraction>,
 )
 
+enum class TimeType {
+    NONE, PRECISE, APPROXIMATE
+}
+
 data class Attraction(
     val sequence: Int,
     val name: String,
@@ -22,4 +26,8 @@ data class Attraction(
     val imageUrl: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val timeType: TimeType = TimeType.NONE,
+    val preciseStartTime: String? = null,
+    val preciseEndTime: String? = null,
+    val approxHours: Double? = null
 )
