@@ -7,4 +7,6 @@ data class PlannerRequest(
     val companionType: String? = null,
     val budget: String? = null,
     val pace: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )

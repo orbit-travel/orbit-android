@@ -7,8 +7,14 @@ data class AiPlanResponseDto(
 
 data class DayPlanDto(
     val day: Int,
-    val morning: String,
-    val lunch: String,
-    val afternoon: String,
-    val evening: String,
+    val attractions: List<AttractionDto>,
+)
+
+data class AttractionDto(
+    val sequence: Int,
+    val name: String,
+    val description: String,
+    val imageUrl: String? = null,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )

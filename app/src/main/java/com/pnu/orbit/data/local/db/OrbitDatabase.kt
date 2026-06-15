@@ -8,10 +8,12 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.pnu.orbit.data.local.dao.PhotoDao
 import com.pnu.orbit.data.local.dao.PlanDao
+import com.pnu.orbit.data.local.dao.SavedTravelPlanDao
 import com.pnu.orbit.data.local.dao.TransportSegmentDao
 import com.pnu.orbit.data.local.dao.TripDao
 import com.pnu.orbit.data.local.entity.PhotoEntity
 import com.pnu.orbit.data.local.entity.PlanEntity
+import com.pnu.orbit.data.local.entity.SavedTravelPlanEntity
 import com.pnu.orbit.data.local.entity.TransportSegmentEntity
 import com.pnu.orbit.data.local.entity.TripEntity
 
@@ -21,8 +23,9 @@ import com.pnu.orbit.data.local.entity.TripEntity
         TransportSegmentEntity::class,
         PhotoEntity::class,
         PlanEntity::class,
+        SavedTravelPlanEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class OrbitDatabase : RoomDatabase() {
@@ -30,6 +33,7 @@ abstract class OrbitDatabase : RoomDatabase() {
     abstract fun transportSegmentDao(): TransportSegmentDao
     abstract fun photoDao(): PhotoDao
     abstract fun planDao(): PlanDao
+    abstract fun savedTravelPlanDao(): SavedTravelPlanDao
 
     companion object {
         private val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -78,6 +82,7 @@ abstract class OrbitDatabase : RoomDatabase() {
                     OrbitDatabase::class.java,
                     "orbit.db",
                 ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }
             }

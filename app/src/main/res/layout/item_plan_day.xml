@@ -14,12 +14,21 @@
         android:textSize="18sp"
         android:textStyle="bold" />
 
-    <TextView
-        android:id="@+id/dayBody"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/attractionsRecyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:layout_marginTop="12dp"
+        android:scrollbars="vertical" />
+
+    <Button
+        android:id="@+id/btnAddPlace"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:lineSpacingExtra="4dp"
-        android:textColor="@color/orbit_text_secondary"
-        android:textSize="14sp" />
+        android:text="+ 장소 추가"
+        android:backgroundTint="@color/orbit_primary"
+        android:textColor="@color/orbit_space"
+        android:textStyle="bold" />
 </LinearLayout>

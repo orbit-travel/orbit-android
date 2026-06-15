@@ -12,6 +12,7 @@ if (localPropertiesFile.exists()) {
 }
 val mapsApiKey = localProperties.getProperty("MAPS_API_KEY").orEmpty()
 val placesApiKey = localProperties.getProperty("PLACES_API_KEY", mapsApiKey).orEmpty()
+val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY").orEmpty()
 
 fun String.asBuildConfigString(): String =
     "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
@@ -35,6 +36,7 @@ android {
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         buildConfigField("String", "MAPS_API_KEY", mapsApiKey.asBuildConfigString())
         buildConfigField("String", "PLACES_API_KEY", placesApiKey.asBuildConfigString())
+        buildConfigField("String", "GEMINI_API_KEY", geminiApiKey.asBuildConfigString())
     }
 
     buildTypes {

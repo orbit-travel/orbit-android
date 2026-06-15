@@ -53,6 +53,17 @@ class RangeCalendarView @JvmOverloads constructor(
     private var startDateMillis: Long? = null
     private var endDateMillis: Long? = null
 
+    private var plannedDates = setOf<Long>()
+    private val plannedPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ContextCompat.getColor(context, R.color.orbit_primary)
+        alpha = 76 // ~30% opacity
+    }
+
+    fun setPlannedDates(dates: Set<Long>) {
+        plannedDates = dates.map { startOfDay(it) }.toSet()
+        invalidate()
+    }
+
     fun setMonth(monthStartMillis: Long) {
         displayedMonthMillis = startOfMonth(monthStartMillis)
         invalidate()
@@ -107,6 +118,17 @@ class RangeCalendarView @JvmOverloads constructor(
             val inRange = isInSelectedRange(dateMillis)
             val isStartOrEnd = isSameDay(dateMillis, startDateMillis) ||
                 isSameDay(dateMillis, endDateMillis)
+
+            val isPlanned = plannedDates.contains(startOfDay(dateMillis))
+            if (isPlanned) {
+                val planRect = RectF(
+                    left + 4f.dp,
+                    top + 5f.dp,
+                    left + cellWidth - 4f.dp,
+                    top + cellHeight - 5f.dp,
+                )
+                canvas.drawRoundRect(planRect, 16f.dp, 16f.dp, plannedPaint)
+            }
 
             if (inRange) {
                 val rangeRect = RectF(
