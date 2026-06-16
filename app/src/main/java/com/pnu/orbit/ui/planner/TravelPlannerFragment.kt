@@ -26,7 +26,6 @@ class TravelPlannerFragment : Fragment() {
                 PlannerNavigation.CALENDAR -> showChildFragment(TravelCalendarFragment())
                 PlannerNavigation.GENERATING -> showChildFragment(GeneratingPlanFragment())
                 PlannerNavigation.GENERATED -> showChildFragment(GeneratedItemFragment())
-                PlannerNavigation.CONFIRM -> showChildFragment(CalendarConfirmFragment())
                 else -> showChildFragment(TravelCalendarFragment())
             }
         }

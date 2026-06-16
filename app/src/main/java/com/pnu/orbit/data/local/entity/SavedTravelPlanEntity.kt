@@ -13,4 +13,5 @@ data class SavedTravelPlanEntity(
     val planJson: String,
     val startDate: String, // format yyyy-MM-dd
     val createdAt: Long,
+    val color: Int = 0,
 )

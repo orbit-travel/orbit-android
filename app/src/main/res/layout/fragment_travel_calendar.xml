@@ -4,18 +4,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/orbit_space"
+    android:clipToPadding="false"
     android:paddingStart="20dp"
-    android:paddingEnd="20dp"
     android:paddingTop="56dp"
-    android:clipToPadding="false">
+    android:paddingEnd="20dp">
 
-    <!-- Title -->
     <TextView
         android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="나의 여행 일정"
+        android:text="Travel Planner"
         android:textColor="@color/white"
         android:textSize="22sp"
         android:textStyle="bold"
@@ -23,7 +22,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- Calendar Month Navigation -->
     <LinearLayout
         android:id="@+id/calendarHeader"
         android:layout_width="0dp"
@@ -62,7 +60,6 @@
             android:textColor="@color/white" />
     </LinearLayout>
 
-    <!-- Calendar Custom View -->
     <com.pnu.orbit.ui.addtrip.RangeCalendarView
         android:id="@+id/travelCalendarView"
         android:layout_width="0dp"
@@ -79,25 +76,23 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:gravity="center"
-        android:text="계획이 생성된 날짜를 클릭하면 상세 계획으로 이동합니다."
+        android:text="Tap a planned date to open its itinerary."
         android:textColor="@color/orbit_text_secondary"
         android:textSize="13sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/travelCalendarView" />
 
-    <!-- AI Recommend FAB -->
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/btnAiRecommend"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="24dp"
-        android:text="AI Recommend"
+        android:text="AI Itinerary"
         android:textColor="@color/orbit_space"
         app:backgroundTint="@color/orbit_primary"
         app:icon="@drawable/ic_picto_activity"
         app:iconTint="@color/orbit_space"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-
 </androidx.constraintlayout.widget.ConstraintLayout>

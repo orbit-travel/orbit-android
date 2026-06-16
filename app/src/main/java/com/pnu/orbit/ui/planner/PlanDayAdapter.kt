@@ -1,32 +1,36 @@
 package com.pnu.orbit.ui.planner
 
 import android.app.AlertDialog
-import android.app.TimePickerDialog
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.ImageButton
-import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.NumberPicker
 import android.widget.TextView
 import androidx.core.content.ContextCompat
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.pnu.orbit.R
 import com.pnu.orbit.domain.model.Attraction
 import com.pnu.orbit.domain.model.DayPlan
 import com.pnu.orbit.domain.model.TimeType
 
 class PlanDayAdapter(
-    private val onMoveUp: (dayNum: Int, sequence: Int) -> Unit,
-    private val onMoveDown: (dayNum: Int, sequence: Int) -> Unit,
     private val onDelete: (dayNum: Int, sequence: Int) -> Unit,
     private val onTimeUpdated: (dayNum: Int, sequence: Int, timeType: TimeType, start: String?, end: String?, approx: Double?) -> Unit,
     private val onMoveDay: (dayNum: Int, sequence: Int, targetDayNum: Int) -> Unit,
     private val onAddPlace: (dayNum: Int) -> Unit,
-    private val onCardClick: (Attraction) -> Unit
+    private val onCardClick: (Attraction) -> Unit,
+    private val onDetailsClick: (Attraction) -> Unit,
+    private val onReorder: (dayNum: Int, fromIndex: Int, toIndex: Int) -> Unit,
 ) : RecyclerView.Adapter<PlanDayAdapter.ViewHolder>() {
     private val items = mutableListOf<DayPlan>()
+    private var editable: Boolean = true
 
     fun submitList(newItems: List<DayPlan>) {
         items.clear()
@@ -34,9 +38,24 @@ class PlanDayAdapter(
         notifyDataSetChanged()
     }
 
+    fun setEditable(enabled: Boolean) {
+        editable = enabled
+        notifyDataSetChanged()
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_plan_day, parent, false)
-        return ViewHolder(view, onMoveUp, onMoveDown, onDelete, onTimeUpdated, onMoveDay, onAddPlace, onCardClick) { items.size }
+        return ViewHolder(
+            itemView = view,
+            onDelete = onDelete,
+            onTimeUpdated = onTimeUpdated,
+            onMoveDay = onMoveDay,
+            onAddPlace = onAddPlace,
+            onCardClick = onCardClick,
+            onDetailsClick = onDetailsClick,
+            onReorder = onReorder,
+            isEditable = { editable },
+        ) { items.size }
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -47,35 +66,105 @@ class PlanDayAdapter(
 
     class ViewHolder(
         itemView: View,
-        private val onMoveUp: (dayNum: Int, sequence: Int) -> Unit,
-        private val onMoveDown: (dayNum: Int, sequence: Int) -> Unit,
         private val onDelete: (dayNum: Int, sequence: Int) -> Unit,
         private val onTimeUpdated: (dayNum: Int, sequence: Int, timeType: TimeType, start: String?, end: String?, approx: Double?) -> Unit,
         private val onMoveDay: (dayNum: Int, sequence: Int, targetDayNum: Int) -> Unit,
         private val onAddPlace: (dayNum: Int) -> Unit,
         private val onCardClick: (Attraction) -> Unit,
-        private val getTotalDays: () -> Int
+        private val onDetailsClick: (Attraction) -> Unit,
+        private val onReorder: (dayNum: Int, fromIndex: Int, toIndex: Int) -> Unit,
+        private val isEditable: () -> Boolean,
+        private val getTotalDays: () -> Int,
     ) : RecyclerView.ViewHolder(itemView) {
         private val title: TextView = itemView.findViewById(R.id.dayTitle)
         private val recyclerView: RecyclerView = itemView.findViewById(R.id.attractionsRecyclerView)
         private val btnAddPlace: Button = itemView.findViewById(R.id.btnAddPlace)
+        private var attractionAdapter: AttractionAdapter? = null
+        private var touchHelper: ItemTouchHelper? = null
+        private var dragStartIndex: Int? = null
+        private var currentDay: Int = 1
 
         fun bind(plan: DayPlan) {
+            currentDay = plan.day
             title.text = "Day ${plan.day}"
-            recyclerView.layoutManager = LinearLayoutManager(itemView.context)
-            val adapter = AttractionAdapter(
-                dayNum = plan.day,
-                totalDays = getTotalDays(),
-                onMoveUp = onMoveUp,
-                onMoveDown = onMoveDown,
+            if (recyclerView.layoutManager == null) {
+                recyclerView.layoutManager = LinearLayoutManager(itemView.context)
+                recyclerView.itemAnimator = null
+            }
+
+            val adapter = attractionAdapter ?: AttractionAdapter(
                 onDelete = onDelete,
                 onTimeUpdated = onTimeUpdated,
                 onMoveDay = onMoveDay,
-                onCardClick = onCardClick
-            )
-            recyclerView.adapter = adapter
+                onCardClick = onCardClick,
+                onDetailsClick = onDetailsClick,
+                isEditable = isEditable,
+                onStartDrag = { holder -> touchHelper?.startDrag(holder) },
+            ).also {
+                attractionAdapter = it
+                recyclerView.adapter = it
+            }
+            adapter.configure(dayNum = plan.day, totalDays = getTotalDays())
             adapter.submitList(plan.attractions)
 
+            if (touchHelper == null) {
+                touchHelper = ItemTouchHelper(
+                    object : ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0) {
+                    override fun getMovementFlags(
+                        recyclerView: RecyclerView,
+                        viewHolder: RecyclerView.ViewHolder,
+                    ): Int {
+                        return if (isEditable()) {
+                            makeMovementFlags(ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0)
+                        } else {
+                            0
+                        }
+                    }
+
+                    override fun onMove(
+                        recyclerView: RecyclerView,
+                        viewHolder: RecyclerView.ViewHolder,
+                        target: RecyclerView.ViewHolder,
+                    ): Boolean {
+                        val from = viewHolder.bindingAdapterPosition
+                        val to = target.bindingAdapterPosition
+                        if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                        if (dragStartIndex == null) dragStartIndex = from
+                        adapter.moveItem(from, to)
+                        return true
+                    }
+
+                    override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+                    override fun isLongPressDragEnabled(): Boolean = false
+                    
+                    override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
+                        super.onSelectedChanged(viewHolder, actionState)
+                        if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && viewHolder != null) {
+                            dragStartIndex = viewHolder.bindingAdapterPosition
+                        }
+                    }
+
+                    override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                        super.clearView(recyclerView, viewHolder)
+                        val from = dragStartIndex
+                        val to = viewHolder.bindingAdapterPosition
+                        dragStartIndex = null
+                        if (
+                            from != null &&
+                            from != RecyclerView.NO_POSITION &&
+                            to != RecyclerView.NO_POSITION &&
+                            from != to
+                        ) {
+                            onReorder(currentDay, from, to)
+                        }
+                    }
+                    },
+                )
+                touchHelper?.attachToRecyclerView(recyclerView)
+            }
+
+            btnAddPlace.visibility = if (isEditable()) View.VISIBLE else View.GONE
             btnAddPlace.setOnClickListener {
                 onAddPlace(plan.day)
             }
@@ -84,21 +173,38 @@ class PlanDayAdapter(
 }
 
 class AttractionAdapter(
-    private val dayNum: Int,
-    private val totalDays: Int,
-    private val onMoveUp: (dayNum: Int, sequence: Int) -> Unit,
-    private val onMoveDown: (dayNum: Int, sequence: Int) -> Unit,
     private val onDelete: (dayNum: Int, sequence: Int) -> Unit,
     private val onTimeUpdated: (dayNum: Int, sequence: Int, timeType: TimeType, start: String?, end: String?, approx: Double?) -> Unit,
     private val onMoveDay: (dayNum: Int, sequence: Int, targetDayNum: Int) -> Unit,
-    private val onCardClick: (Attraction) -> Unit
+    private val onCardClick: (Attraction) -> Unit,
+    private val onDetailsClick: (Attraction) -> Unit,
+    private val isEditable: () -> Boolean,
+    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
 ) : RecyclerView.Adapter<AttractionAdapter.ViewHolder>() {
     private val items = mutableListOf<Attraction>()
+    private var dayNum: Int = 1
+    private var totalDays: Int = 1
+
+    fun configure(dayNum: Int, totalDays: Int) {
+        this.dayNum = dayNum
+        this.totalDays = totalDays
+    }
 
     fun submitList(newItems: List<Attraction>) {
         items.clear()
         items.addAll(newItems)
         notifyDataSetChanged()
+    }
+
+    fun moveItem(fromIndex: Int, toIndex: Int) {
+        if (fromIndex !in items.indices || toIndex !in items.indices) return
+        val moving = items.removeAt(fromIndex)
+        items.add(toIndex, moving)
+        for (index in items.indices) {
+            items[index] = items[index].copy(sequence = index + 1)
+        }
+        notifyItemMoved(fromIndex, toIndex)
+        notifyItemRangeChanged(minOf(fromIndex, toIndex), kotlin.math.abs(fromIndex - toIndex) + 1)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -111,14 +217,13 @@ class AttractionAdapter(
             attraction = items[position],
             dayNum = dayNum,
             totalDays = totalDays,
-            isFirst = position == 0,
-            isLast = position == items.size - 1,
-            onMoveUp = onMoveUp,
-            onMoveDown = onMoveDown,
             onDelete = onDelete,
             onTimeUpdated = onTimeUpdated,
             onMoveDay = onMoveDay,
-            onCardClick = onCardClick
+            onCardClick = onCardClick,
+            onDetailsClick = onDetailsClick,
+            isEditable = isEditable,
+            onStartDrag = onStartDrag,
         )
     }
 
@@ -126,229 +231,244 @@ class AttractionAdapter(
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val sequence: TextView = itemView.findViewById(R.id.attractionSequence)
+        private val dragHandle: View = itemView.findViewById(R.id.dragHandle)
         private val name: TextView = itemView.findViewById(R.id.attractionName)
-        private val image: ImageView = itemView.findViewById(R.id.attractionImage)
-        
-        // Time Planning components
-        private val tvModePrecise: TextView = itemView.findViewById(R.id.tvModePrecise)
-        private val tvModeApprox: TextView = itemView.findViewById(R.id.tvModeApprox)
+        private val description: TextView = itemView.findViewById(R.id.attractionDescription)
         private val tvTimeValue: TextView = itemView.findViewById(R.id.tvTimeValue)
-
-        // Action Buttons
-        private val btnMoveUp: ImageButton = itemView.findViewById(R.id.btnMoveUp)
-        private val btnMoveDown: ImageButton = itemView.findViewById(R.id.btnMoveDown)
+        private val btnClearTime: TextView = itemView.findViewById(R.id.btnClearTime)
         private val btnMoveDay: ImageButton = itemView.findViewById(R.id.btnMoveDay)
         private val btnDelete: ImageButton = itemView.findViewById(R.id.btnDelete)
+        private val btnPlaceDetails: MaterialButton = itemView.findViewById(R.id.btnPlaceDetails)
 
         fun bind(
             attraction: Attraction,
             dayNum: Int,
             totalDays: Int,
-            isFirst: Boolean,
-            isLast: Boolean,
-            onMoveUp: (dayNum: Int, sequence: Int) -> Unit,
-            onMoveDown: (dayNum: Int, sequence: Int) -> Unit,
             onDelete: (dayNum: Int, sequence: Int) -> Unit,
             onTimeUpdated: (dayNum: Int, sequence: Int, timeType: TimeType, start: String?, end: String?, approx: Double?) -> Unit,
             onMoveDay: (dayNum: Int, sequence: Int, targetDayNum: Int) -> Unit,
-            onCardClick: (Attraction) -> Unit
+            onCardClick: (Attraction) -> Unit,
+            onDetailsClick: (Attraction) -> Unit,
+            isEditable: () -> Boolean,
+            onStartDrag: (RecyclerView.ViewHolder) -> Unit,
         ) {
             sequence.text = attraction.sequence.toString()
             name.text = attraction.name
+            description.text = attraction.description
 
-            // Hook click listener on card view to focus map camera
-            itemView.setOnClickListener { onCardClick(attraction) }
-
-            // 1. Categorization & Local Vector Pictogram loading
-            val category = determineCategory(attraction.name, attraction.description)
-            val details = getCategoryDetails(category)
-            
-            // Render local pictogram with specific category color tint
-            image.setImageResource(details.first)
-            image.setColorFilter(details.second)
-
-            // Tint the attraction name text color to match the category
+            val details = getCategoryDetails(determineCategory(attraction.name, attraction.description))
             name.setTextColor(details.second)
 
-            // 2. Action buttons click listeners
-            btnMoveUp.setOnClickListener { onMoveUp(dayNum, attraction.sequence) }
-            btnMoveDown.setOnClickListener { onMoveDown(dayNum, attraction.sequence) }
+            itemView.setOnClickListener { onCardClick(attraction) }
+            btnPlaceDetails.setOnClickListener { onDetailsClick(attraction) }
             btnDelete.setOnClickListener { onDelete(dayNum, attraction.sequence) }
+            btnDelete.visibility = if (isEditable()) View.VISIBLE else View.GONE
+            btnMoveDay.visibility = if (isEditable()) View.VISIBLE else View.GONE
+            dragHandle.visibility = if (isEditable()) View.VISIBLE else View.INVISIBLE
+            dragHandle.setOnTouchListener { _, event ->
+                if (isEditable() && event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    onStartDrag(this)
+                }
+                false
+            }
 
-            // Enable/Disable buttons based on position
-            btnMoveUp.isEnabled = !isFirst
-            btnMoveUp.alpha = if (!isFirst) 1.0f else 0.4f
-            btnMoveDown.isEnabled = !isLast
-            btnMoveDown.alpha = if (!isLast) 1.0f else 0.4f
-
-            // btnMoveDay click listener (Show list of other days to move to)
-            val context = itemView.context
             btnMoveDay.setOnClickListener {
-                if (totalDays <= 1) {
-                    AlertDialog.Builder(context)
-                        .setTitle("알림")
-                        .setMessage("이동할 수 있는 다른 일차가 존재하지 않습니다.")
-                        .setPositiveButton("확인", null)
-                        .show()
-                } else {
-                    val otherDays = (1..totalDays).filter { it != dayNum }
-                    val items = otherDays.map { "${it}일차" }.toTypedArray()
-
-                    AlertDialog.Builder(context)
-                        .setTitle("이동할 일차 선택")
-                        .setItems(items) { _, which ->
-                            val selectedDay = otherDays[which]
-                            onMoveDay(dayNum, attraction.sequence, selectedDay)
-                        }
-                        .setNegativeButton("취소", null)
-                        .show()
+                if (isEditable()) {
+                    showMoveDayDialog(
+                        totalDays = totalDays,
+                        currentDay = dayNum,
+                        sequence = attraction.sequence,
+                        onMoveDay = onMoveDay,
+                    )
                 }
             }
 
-            // 3. Render Time Selection States
+            renderTimeState(attraction)
+            if (isEditable()) {
+                tvTimeValue.isEnabled = true
+                bindTimeActions(attraction, dayNum, onTimeUpdated)
+            } else {
+                tvTimeValue.isEnabled = false
+                btnClearTime.visibility = View.GONE
+            }
+        }
+
+        private fun showMoveDayDialog(
+            totalDays: Int,
+            currentDay: Int,
+            sequence: Int,
+            onMoveDay: (dayNum: Int, sequence: Int, targetDayNum: Int) -> Unit,
+        ) {
+            val context = itemView.context
+            if (totalDays <= 1) {
+                AlertDialog.Builder(context)
+                    .setTitle("Notice")
+                    .setMessage("There is no other day to move this place to.")
+                    .setPositiveButton("OK", null)
+                    .show()
+                return
+            }
+
+            val otherDays = (1..totalDays).filter { it != currentDay }
+            val labels = otherDays.map { "Day $it" }.toTypedArray()
+            AlertDialog.Builder(context)
+                .setTitle("Move to day")
+                .setItems(labels) { _, which ->
+                    onMoveDay(currentDay, sequence, otherDays[which])
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+
+        private fun renderTimeState(attraction: Attraction) {
+            val context = itemView.context
             val selectedBg = ContextCompat.getDrawable(context, R.drawable.bg_time_chip_selected)
             val unselectedBg = ContextCompat.getDrawable(context, R.drawable.bg_time_chip_unselected)
             val selectedColor = ContextCompat.getColor(context, R.color.orbit_space)
-            val unselectedColor = ContextCompat.getColor(context, R.color.orbit_text_secondary)
 
             when (attraction.timeType) {
                 TimeType.PRECISE -> {
-                    tvModePrecise.background = selectedBg
-                    tvModePrecise.setTextColor(selectedColor)
-                    tvModeApprox.background = unselectedBg
-                    tvModeApprox.setTextColor(unselectedColor)
-
-                    val startTime = attraction.preciseStartTime ?: "09:00"
-                    val endTime = attraction.preciseEndTime ?: "10:00"
-                    tvTimeValue.text = "$startTime ~ $endTime"
+                    tvTimeValue.background = selectedBg
+                    tvTimeValue.setTextColor(selectedColor)
+                    tvTimeValue.text = formatVisitTime(
+                        attraction.preciseStartTime,
+                        attraction.preciseEndTime,
+                    )
+                    btnClearTime.visibility = View.VISIBLE
                 }
-                TimeType.APPROXIMATE -> {
-                    tvModePrecise.background = unselectedBg
-                    tvModePrecise.setTextColor(unselectedColor)
-                    tvModeApprox.background = selectedBg
-                    tvModeApprox.setTextColor(selectedColor)
-
-                    val hours = attraction.approxHours ?: 1.0
-                    tvTimeValue.text = "약 ${hours}시간"
-                }
+                TimeType.APPROXIMATE,
                 TimeType.NONE -> {
-                    tvModePrecise.background = unselectedBg
-                    tvModePrecise.setTextColor(unselectedColor)
-                    tvModeApprox.background = unselectedBg
-                    tvModeApprox.setTextColor(unselectedColor)
-                    tvTimeValue.text = "시간 입력하기"
-                }
-            }
-
-            // 4. Click Listeners for Time Modes
-            tvModePrecise.setOnClickListener {
-                if (attraction.timeType != TimeType.PRECISE) {
-                    val defaultStart = attraction.preciseStartTime ?: "09:00"
-                    val defaultEnd = attraction.preciseEndTime ?: "10:00"
-                    onTimeUpdated(dayNum, attraction.sequence, TimeType.PRECISE, defaultStart, defaultEnd, null)
-                }
-            }
-
-            tvModeApprox.setOnClickListener {
-                if (attraction.timeType != TimeType.APPROXIMATE) {
-                    val defaultApprox = attraction.approxHours ?: 1.0
-                    onTimeUpdated(dayNum, attraction.sequence, TimeType.APPROXIMATE, null, null, defaultApprox)
-                }
-            }
-
-            // 5. Click Listener for Time Value (Open Picker Dialogs)
-            tvTimeValue.setOnClickListener {
-                when (attraction.timeType) {
-                    TimeType.PRECISE -> {
-                        // Open start time picker
-                        val startParts = (attraction.preciseStartTime ?: "09:00").split(":")
-                        val startH = startParts.getOrNull(0)?.toIntOrNull() ?: 9
-                        val startM = startParts.getOrNull(1)?.toIntOrNull() ?: 0
-
-                        val startPicker = TimePickerDialog(context, { _, sh, sm ->
-                            val startTimeStr = String.format("%02d:%02d", sh, sm)
-                            
-                            // Open end time picker after start time is selected
-                            val endParts = (attraction.preciseEndTime ?: "10:00").split(":")
-                            val endH = endParts.getOrNull(0)?.toIntOrNull() ?: ((sh + 1) % 24)
-                            val endM = endParts.getOrNull(1)?.toIntOrNull() ?: sm
-
-                            TimePickerDialog(context, { _, eh, em ->
-                                val endTimeStr = String.format("%02d:%02d", eh, em)
-                                onTimeUpdated(dayNum, attraction.sequence, TimeType.PRECISE, startTimeStr, endTimeStr, null)
-                            }, endH, endM, true).apply {
-                                setTitle("종료 시간 선택")
-                                show()
-                            }
-                        }, startH, startM, true)
-                        startPicker.setTitle("시작 시간 선택")
-                        startPicker.show()
-                    }
-                    TimeType.APPROXIMATE -> {
-                        // Open Choice Dialog for hours
-                        val options = arrayOf(
-                            "약 0.5시간", "약 1.0시간", "약 1.5시간", "약 2.0시간",
-                            "약 2.5시간", "약 3.0시간", "약 4.0시간", "약 5.0시간"
-                        )
-                        val values = doubleArrayOf(0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0)
-                        
-                        AlertDialog.Builder(context)
-                            .setTitle("대략적인 시간 선택")
-                            .setItems(options) { _, which ->
-                                onTimeUpdated(dayNum, attraction.sequence, TimeType.APPROXIMATE, null, null, values[which])
-                            }
-                            .setNegativeButton("취소", null)
-                            .show()
-                    }
-                    TimeType.NONE -> {
-                        // Show options
-                        val choices = arrayOf("정확한 시간 계획 설정", "대략적인 계획 설정")
-                        AlertDialog.Builder(context)
-                            .setTitle("시간 계획 방식 선택")
-                            .setItems(choices) { _, which ->
-                                if (which == 0) {
-                                    onTimeUpdated(dayNum, attraction.sequence, TimeType.PRECISE, "09:00", "10:00", null)
-                                } else {
-                                    onTimeUpdated(dayNum, attraction.sequence, TimeType.APPROXIMATE, null, null, 1.0)
-                                }
-                            }
-                            .setNegativeButton("취소", null)
-                            .show()
-                    }
+                    tvTimeValue.background = unselectedBg
+                    tvTimeValue.setTextColor(ContextCompat.getColor(context, R.color.white))
+                    tvTimeValue.text = "Set time"
+                    btnClearTime.visibility = View.GONE
                 }
             }
         }
+
+        private fun bindTimeActions(
+            attraction: Attraction,
+            dayNum: Int,
+            onTimeUpdated: (dayNum: Int, sequence: Int, timeType: TimeType, start: String?, end: String?, approx: Double?) -> Unit,
+        ) {
+            tvTimeValue.setOnClickListener {
+                showVisitTimePicker(attraction, dayNum, onTimeUpdated)
+            }
+            btnClearTime.setOnClickListener {
+                onTimeUpdated(dayNum, attraction.sequence, TimeType.NONE, null, null, null)
+            }
+        }
+
+        private fun showVisitTimePicker(
+            attraction: Attraction,
+            dayNum: Int,
+            onTimeUpdated: (dayNum: Int, sequence: Int, timeType: TimeType, start: String?, end: String?, approx: Double?) -> Unit,
+        ) {
+            val context = itemView.context
+            val startParts = parseTime(attraction.preciseStartTime) ?: (9 to 0)
+            val endParts = parseTime(attraction.preciseEndTime) ?: (10 to 0)
+            val minuteLabels = arrayOf("00", "10", "20", "30", "40", "50")
+            val row = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER
+                setPadding(24, 12, 24, 0)
+            }
+            val startHourPicker = NumberPicker(context).apply {
+                minValue = 0
+                maxValue = 23
+                value = startParts.first
+                setFormatter { value -> value.toString().padStart(2, '0') }
+                wrapSelectorWheel = true
+            }
+            val startMinutePicker = NumberPicker(context).apply {
+                minValue = 0
+                maxValue = minuteLabels.lastIndex
+                displayedValues = minuteLabels
+                value = (startParts.second / 10).coerceIn(0, minuteLabels.lastIndex)
+                wrapSelectorWheel = true
+            }
+            val separator = TextView(context).apply {
+                text = "-"
+                textSize = 16f
+                setTextColor(ContextCompat.getColor(context, R.color.white))
+                setPadding(8, 0, 8, 0)
+            }
+            val endHourPicker = NumberPicker(context).apply {
+                minValue = 0
+                maxValue = 23
+                value = endParts.first
+                setFormatter { value -> value.toString().padStart(2, '0') }
+                wrapSelectorWheel = true
+            }
+            val endMinutePicker = NumberPicker(context).apply {
+                minValue = 0
+                maxValue = minuteLabels.lastIndex
+                displayedValues = minuteLabels
+                value = (endParts.second / 10).coerceIn(0, minuteLabels.lastIndex)
+                wrapSelectorWheel = true
+            }
+            row.addView(startHourPicker)
+            row.addView(startMinutePicker)
+            row.addView(separator)
+            row.addView(endHourPicker)
+            row.addView(endMinutePicker)
+
+            AlertDialog.Builder(context)
+                .setTitle("Visit time")
+                .setView(row)
+                .setNegativeButton("Clear") { _, _ ->
+                    onTimeUpdated(dayNum, attraction.sequence, TimeType.NONE, null, null, null)
+                }
+                .setNeutralButton("Cancel", null)
+                .setPositiveButton("Set") { _, _ ->
+                    val start = formatTime(startHourPicker.value, startMinutePicker.value * 10)
+                    val end = formatTime(endHourPicker.value, endMinutePicker.value * 10)
+                    onTimeUpdated(dayNum, attraction.sequence, TimeType.PRECISE, start, end, null)
+                }
+                .show()
+        }
+
+        private fun formatVisitTime(start: String?, end: String?): String =
+            if (!start.isNullOrBlank() && !end.isNullOrBlank()) "$start - $end" else "Set time"
+
+        private fun parseTime(value: String?): Pair<Int, Int>? {
+            if (value.isNullOrBlank()) return null
+            val parts = value.split(":")
+            if (parts.size != 2) return null
+            val hour = parts[0].toIntOrNull()?.coerceIn(0, 23) ?: return null
+            val minute = parts[1].toIntOrNull()?.let { (it / 10).coerceIn(0, 5) * 10 } ?: return null
+            return hour to minute
+        }
+
+        private fun formatTime(hour: Int, minute: Int): String =
+            "${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}"
     }
 }
 
-// ==========================================
-// Category & Pictogram Utilities
-// ==========================================
 enum class AttractionCategory(val displayName: String) {
-    ACTIVITY("놀거리"),
-    CULTURE("문화 및 명소"),
-    RESTAURANT("식당"),
-    NATURE("자연 경관"),
-    ACCOMMODATION("숙소")
+    ACTIVITY("Activity"),
+    CULTURE("Culture"),
+    RESTAURANT("Restaurant"),
+    NATURE("Nature"),
+    ACCOMMODATION("Accommodation"),
 }
 
-fun getCategoryDetails(category: AttractionCategory): Triple<Int, Int, String> {
-    return when (category) {
+fun getCategoryDetails(category: AttractionCategory): Triple<Int, Int, String> =
+    when (category) {
         AttractionCategory.ACTIVITY -> Triple(R.drawable.ic_picto_activity, 0xFFFF6B6B.toInt(), "#FF6B6B")
         AttractionCategory.CULTURE -> Triple(R.drawable.ic_picto_culture, 0xFFD68CFC.toInt(), "#D68CFC")
         AttractionCategory.RESTAURANT -> Triple(R.drawable.ic_picto_restaurant, 0xFF64D2FF.toInt(), "#64D2FF")
         AttractionCategory.NATURE -> Triple(R.drawable.ic_picto_nature, 0xFF98DFAF.toInt(), "#98DFAF")
         AttractionCategory.ACCOMMODATION -> Triple(R.drawable.ic_picto_accommodation, 0xFFFFD166.toInt(), "#FFD166")
     }
-}
 
 fun determineCategory(name: String, description: String): AttractionCategory {
     val text = "$name $description".lowercase()
     return when {
-        text.contains("숙소") || text.contains("호텔") || text.contains("펜션") || text.contains("게스트하우스") || text.contains("리조트") || text.contains("민박") || text.contains("모텔") || text.contains("에어비앤비") || text.contains("야영") || text.contains("캠핑") -> AttractionCategory.ACCOMMODATION
-        text.contains("식당") || text.contains("맛집") || text.contains("음식") || text.contains("레스토랑") || text.contains("요리") || text.contains("식사") || text.contains("점심") || text.contains("저녁") || text.contains("갈비") || text.contains("밥") || text.contains("구이") || text.contains("푸드") || text.contains("바베큐") || text.contains("카페") || text.contains("커피") || text.contains("디저트") || text.contains("cafe") || text.contains("coffee") || text.contains("에스프레소") -> AttractionCategory.RESTAURANT
-        text.contains("자연 경관") || text.contains("자연") || text.contains("공원") || text.contains("해변") || text.contains("바다") || text.contains("산") || text.contains("계곡") || text.contains("숲") || text.contains("강") || text.contains("호수") || text.contains("섬") || text.contains("해수욕장") || text.contains("산책") || text.contains("폭포") || text.contains("정원") || text.contains("경관") || text.contains("전망대") -> AttractionCategory.NATURE
-        text.contains("문화 및 명소") || text.contains("문화") || text.contains("명소") || text.contains("박물관") || text.contains("미술관") || text.contains("성") || text.contains("유적") || text.contains("사찰") || text.contains("절") || text.contains("궁궐") || text.contains("타워") || text.contains("역사") || text.contains("성당") || text.contains("교회") || text.contains("전시") || text.contains("랜드마크") -> AttractionCategory.CULTURE
+        listOf("hotel", "lodging", "stay", "resort", "hostel", "accommodation").any(text::contains) -> AttractionCategory.ACCOMMODATION
+        listOf("restaurant", "cafe", "coffee", "food", "market", "dining", "lunch", "dinner").any(text::contains) -> AttractionCategory.RESTAURANT
+        listOf("park", "beach", "mountain", "garden", "river", "lake", "forest", "view").any(text::contains) -> AttractionCategory.NATURE
+        listOf("museum", "gallery", "temple", "shrine", "church", "palace", "history", "landmark").any(text::contains) -> AttractionCategory.CULTURE
         else -> AttractionCategory.ACTIVITY
     }
 }

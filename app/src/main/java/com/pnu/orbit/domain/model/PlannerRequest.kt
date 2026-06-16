@@ -9,4 +9,24 @@ data class PlannerRequest(
     val pace: String? = null,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val startDate: String? = null,
+    val endDate: String? = null,
+    val regions: List<PlannerPlace> = emptyList(),
+    val accommodations: List<PlannerAccommodation> = emptyList(),
+    val arrivalTime: String? = null,
+    val departureTime: String? = null,
+    val transportMode: String? = null,
+)
+
+data class PlannerPlace(
+    val name: String,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+)
+
+data class PlannerAccommodation(
+    val day: Int,
+    val name: String,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
 )

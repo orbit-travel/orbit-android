@@ -88,7 +88,7 @@
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="16dp"
-                android:text="X 제외"
+                android:text="Remove"
                 android:textColor="#FF6B6B"
                 app:strokeColor="#FF6B6B"
                 app:rippleColor="#20FF6B6B" />
@@ -99,7 +99,7 @@
                 style="@style/Widget.Material3.Button.ElevatedButton"
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
-                android:text="O 선택"
+                android:text="Select"
                 android:textColor="@color/orbit_space"
                 app:backgroundTint="@color/orbit_primary"
                 app:rippleColor="#20FFFFFF" />
@@ -116,7 +116,7 @@
             android:paddingEnd="12dp"
             android:paddingTop="6dp"
             android:paddingBottom="6dp"
-            android:text="선택됨"
+            android:text="Selected"
             android:textColor="@color/orbit_space"
             android:textSize="14sp"
             android:textStyle="bold"

@@ -10,6 +10,9 @@
         android:id="@+id/dayTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:gravity="center"
+        android:paddingStart="52dp"
+        android:paddingEnd="52dp"
         android:textColor="@color/white"
         android:textSize="18sp"
         android:textStyle="bold" />
@@ -18,8 +21,8 @@
         android:id="@+id/attractionsRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"
         android:layout_marginTop="12dp"
+        android:layout_weight="1"
         android:scrollbars="vertical" />
 
     <Button
@@ -27,8 +30,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:text="+ 장소 추가"
         android:backgroundTint="@color/orbit_primary"
+        android:text="+ Add place"
         android:textColor="@color/orbit_space"
         android:textStyle="bold" />
 </LinearLayout>

@@ -9,4 +9,24 @@ data class AiPlanRequestDto(
     val pace: String?,
     val latitude: Double?,
     val longitude: Double?,
+    val startDate: String?,
+    val endDate: String?,
+    val regions: List<PlannerPlaceDto>,
+    val accommodations: List<PlannerAccommodationDto>,
+    val arrivalTime: String?,
+    val departureTime: String?,
+    val transportMode: String?,
+)
+
+data class PlannerPlaceDto(
+    val name: String,
+    val latitude: Double?,
+    val longitude: Double?,
+)
+
+data class PlannerAccommodationDto(
+    val day: Int,
+    val name: String,
+    val latitude: Double?,
+    val longitude: Double?,
 )

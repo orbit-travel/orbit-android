@@ -4,30 +4,33 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/orbit_space"
+    android:clipToPadding="false"
     android:paddingStart="20dp"
-    android:paddingEnd="20dp"
     android:paddingTop="56dp"
-    android:clipToPadding="false">
+    android:paddingEnd="20dp">
 
-    <!-- Header -->
     <ImageButton
         android:id="@+id/btnBackToGenerate"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_marginTop="16dp"
         android:background="?attr/selectableItemBackgroundBorderless"
-        android:src="@android:drawable/ic_menu_revert"
-        android:contentDescription="New Plan"
+        android:contentDescription="Back"
+        android:src="@drawable/ic_arrow_back"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
+    <EditText
         android:id="@+id/generatedTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
+        android:backgroundTint="@color/orbit_primary"
+        android:hint="Itinerary title"
+        android:singleLine="true"
         android:textColor="@color/white"
+        android:textColorHint="@color/orbit_text_secondary"
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/btnBackToGenerate"
@@ -40,12 +43,40 @@
         style="@style/Widget.Material3.Button.ElevatedButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="승인"
+        android:text="Save"
         android:textColor="@color/orbit_space"
         app:backgroundTint="#4CAF50"
+        app:layout_constraintBottom_toBottomOf="@id/btnBackToGenerate"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="@id/btnBackToGenerate"
-        app:layout_constraintBottom_toBottomOf="@id/btnBackToGenerate" />
+        app:layout_constraintTop_toTopOf="@id/btnBackToGenerate" />
+
+    <LinearLayout
+        android:id="@+id/savedActionBar"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="end"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btnBackToGenerate">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnEditPlan"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Edit" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnDeletePlan"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Delete"
+            android:textColor="#FF6B6B" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/plannerStatus"
@@ -54,20 +85,31 @@
         android:layout_marginTop="12dp"
         android:textColor="@color/orbit_text_secondary"
         android:textSize="13sp"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/btnBackToGenerate" />
+        app:layout_constraintTop_toBottomOf="@id/savedActionBar" />
 
-    <!-- Google Map panel -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnToggleMap"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="Show map"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/savedActionBar" />
+
     <FrameLayout
         android:id="@+id/plannerMapPanel"
         android:layout_width="0dp"
         android:layout_height="200dp"
-        android:layout_marginTop="12dp"
-        android:visibility="visible"
+        android:layout_marginTop="8dp"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/plannerStatus">
+        app:layout_constraintTop_toBottomOf="@id/btnToggleMap">
 
         <androidx.fragment.app.FragmentContainerView
             android:id="@+id/plannerMapFragmentContainer"
@@ -88,7 +130,6 @@
             android:visibility="gone" />
     </FrameLayout>
 
-    <!-- Daily Timeline ViewPager2 -->
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/dayPlanPager"
         android:layout_width="0dp"
@@ -99,4 +140,29 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/plannerMapPanel" />
 
+    <TextView
+        android:id="@+id/dayArrowLeft"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:gravity="center"
+        android:text="&lt;"
+        android:textColor="@color/orbit_primary"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/dayPlanPager"
+        app:layout_constraintTop_toTopOf="@id/dayPlanPager" />
+
+    <TextView
+        android:id="@+id/dayArrowRight"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:gravity="center"
+        android:text="&gt;"
+        android:textColor="@color/orbit_primary"
+        android:textSize="26sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/dayPlanPager"
+        app:layout_constraintTop_toTopOf="@id/dayPlanPager" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,19 +1,20 @@
 package com.pnu.orbit.ui.planner
 
+import android.app.Activity
 import android.app.AlertDialog
+import android.content.Intent
 import android.content.res.Resources
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.Spinner
 import android.widget.TextView
-import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -26,13 +27,13 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.android.gms.maps.model.MarkerOptions
-import com.google.android.gms.maps.model.PolylineOptions
+import com.google.android.material.button.MaterialButton
 import com.pnu.orbit.BuildConfig
 import com.pnu.orbit.R
 import com.pnu.orbit.domain.model.TravelPlan
 import com.pnu.orbit.map.LabeledMarkerFactory
 import com.pnu.orbit.map.PlaceCoordinateResolver
-import com.pnu.orbit.domain.model.TimeType
+import com.pnu.orbit.ui.addtrip.PlaceSearchActivity
 import com.pnu.orbit.ui.common.UiState
 
 class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
@@ -40,8 +41,6 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
     private val viewModel: TravelPlannerViewModel by viewModels({ requireParentFragment() })
     private val adapter by lazy {
         PlanDayAdapter(
-            onMoveUp = { dayNum, sequence -> viewModel.moveAttractionUp(dayNum, sequence) },
-            onMoveDown = { dayNum, sequence -> viewModel.moveAttractionDown(dayNum, sequence) },
             onDelete = { dayNum, sequence -> viewModel.deleteAttraction(dayNum, sequence) },
             onTimeUpdated = { dayNum, sequence, timeType, start, end, approx ->
                 viewModel.updateAttractionTime(dayNum, sequence, timeType, start, end, approx)
@@ -50,34 +49,51 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
                 viewModel.moveAttractionToDay(currentDay, sequence, targetDay)
             },
             onAddPlace = { dayNum ->
-                showAddPlaceDialog(dayNum)
+                pendingAddPlaceDay = dayNum
+                placeSearchLauncher.launch(Intent(requireContext(), PlaceSearchActivity::class.java))
             },
-            onCardClick = { attraction ->
-                val latLng = if (attraction.latitude != null && attraction.longitude != null) {
-                    LatLng(attraction.latitude, attraction.longitude)
-                } else {
-                    PlaceCoordinateResolver.resolve(attraction.name)
-                }
-                googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
-            }
+            onCardClick = { attraction -> focusMap(attraction.name, attraction.latitude, attraction.longitude) },
+            onDetailsClick = { attraction -> openPlaceDetails(attraction.name) },
+            onReorder = { dayNum, fromIndex, toIndex ->
+                viewModel.reorderAttraction(dayNum, fromIndex, dayNum, toIndex)
+            },
         )
     }
-    
+
     private lateinit var btnBackToGenerate: ImageButton
     private lateinit var btnApprovePlan: Button
-    private lateinit var generatedTitle: TextView
+    private lateinit var generatedTitle: EditText
     private lateinit var plannerStatus: TextView
+    private lateinit var btnEditPlan: MaterialButton
+    private lateinit var btnDeletePlan: MaterialButton
+    private lateinit var btnToggleMap: MaterialButton
+    private lateinit var dayArrowLeft: TextView
+    private lateinit var dayArrowRight: TextView
     private lateinit var mapPanel: View
     private lateinit var mapKeyPlaceholder: TextView
     private lateinit var viewPager: ViewPager2
-    
+
     private var googleMap: GoogleMap? = null
     private var currentPlan: TravelPlan? = null
+    private var pendingAddPlaceDay: Int? = null
+    private var currentEditable = true
+    private var pendingMapFocus: LatLng? = null
+
+    private val placeSearchLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK || result.data == null) return@registerForActivityResult
+        val day = pendingAddPlaceDay ?: return@registerForActivityResult
+        val name = result.data?.getStringExtra(PlaceSearchActivity.EXTRA_PLACE_NAME) ?: return@registerForActivityResult
+        val lat = result.data?.getDoubleExtra(PlaceSearchActivity.EXTRA_PLACE_LAT, 0.0) ?: 0.0
+        val lng = result.data?.getDoubleExtra(PlaceSearchActivity.EXTRA_PLACE_LNG, 0.0) ?: 0.0
+        viewModel.addCustomAttraction(day, name, "Manual", lat, lng)
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View = inflater.inflate(R.layout.fragment_generated_item, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -87,27 +103,52 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
         btnApprovePlan = view.findViewById(R.id.btnApprovePlan)
         generatedTitle = view.findViewById(R.id.generatedTitle)
         plannerStatus = view.findViewById(R.id.plannerStatus)
+        plannerStatus.visibility = View.GONE
+        btnEditPlan = view.findViewById(R.id.btnEditPlan)
+        btnDeletePlan = view.findViewById(R.id.btnDeletePlan)
+        btnToggleMap = view.findViewById(R.id.btnToggleMap)
+        dayArrowLeft = view.findViewById(R.id.dayArrowLeft)
+        dayArrowRight = view.findViewById(R.id.dayArrowRight)
         mapPanel = view.findViewById(R.id.plannerMapPanel)
         mapKeyPlaceholder = view.findViewById(R.id.plannerMapKeyPlaceholder)
-        
         viewPager = view.findViewById(R.id.dayPlanPager)
         viewPager.adapter = adapter
-        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                updateMapForDay(position)
-            }
-        })
+        viewPager.registerOnPageChangeCallback(
+            object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    updateMapForDay(position)
+                    updateDayArrows()
+                }
+            },
+        )
 
-        btnBackToGenerate.setOnClickListener {
-            viewModel.startNewPlan()
-        }
-
+        btnBackToGenerate.setOnClickListener { viewModel.startNewPlan() }
         btnApprovePlan.setOnClickListener {
-            viewModel.navigateToConfirm()
+            viewModel.updatePlanTitle(generatedTitle.text.toString())
+            viewModel.saveCurrentPlan(generatedTitle.text.toString())
+        }
+        btnToggleMap.setOnClickListener {
+            setMapVisible(mapPanel.visibility != View.VISIBLE)
+        }
+        btnEditPlan.setOnClickListener { viewModel.enableCurrentPlanEditing() }
+        btnDeletePlan.setOnClickListener { confirmDeletePlan() }
+        dayArrowLeft.setOnClickListener {
+            if (viewPager.currentItem > 0) viewPager.currentItem = viewPager.currentItem - 1
+        }
+        dayArrowRight.setOnClickListener {
+            val count = currentPlan?.dayPlans?.size ?: 0
+            if (viewPager.currentItem < count - 1) viewPager.currentItem = viewPager.currentItem + 1
         }
 
         viewModel.plan.observe(viewLifecycleOwner) { state ->
             renderPlanState(state)
+        }
+        viewModel.isPlanEditable.observe(viewLifecycleOwner) { editable ->
+            currentEditable = editable
+            applyEditMode(editable)
+        }
+        viewModel.loadedSavedPlan.observe(viewLifecycleOwner) {
+            updatePlanActions()
         }
     }
 
@@ -117,25 +158,18 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun renderPlanState(state: UiState<TravelPlan>) {
-        when (state) {
-            is UiState.Success -> {
-                currentPlan = state.data
-                generatedTitle.text = "${state.data.destination} 여행 계획"
-                mapPanel.visibility = View.VISIBLE
-                ensureMapFragment()
-                adapter.submitList(state.data.dayPlans)
-                updateMapForDay(viewPager.currentItem)
-                
-                plannerStatus.text = if (state.data.isFallback) {
-                    getString(R.string.planner_fallback)
-                } else {
-                    getString(R.string.planner_success)
-                }
-            }
-            else -> {
-                // If not success (e.g. Empty or Loading or Error), do nothing here as parent coordinates navigation
-            }
+        if (state !is UiState.Success) return
+
+        currentPlan = state.data
+        if (generatedTitle.text.toString() != state.data.destination) {
+            generatedTitle.setText(state.data.destination)
         }
+        adapter.submitList(state.data.dayPlans)
+        adapter.setEditable(currentEditable)
+        updateMapForDay(viewPager.currentItem)
+        updateDayArrows()
+        plannerStatus.text = ""
+        plannerStatus.visibility = View.GONE
     }
 
     private fun ensureMapFragment() {
@@ -154,18 +188,17 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
             applyNebulaMapStyle()
             uiSettings.isCompassEnabled = true
             uiSettings.isMapToolbarEnabled = false
-            uiSettings.isZoomControlsEnabled = false
+            uiSettings.isZoomControlsEnabled = true
             uiSettings.isRotateGesturesEnabled = true
             uiSettings.isTiltGesturesEnabled = true
         }
 
-        mapKeyPlaceholder.visibility = if (BuildConfig.MAPS_API_KEY.isBlank()) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
-
+        mapKeyPlaceholder.visibility = if (BuildConfig.MAPS_API_KEY.isBlank()) View.VISIBLE else View.GONE
         updateMapForDay(viewPager.currentItem)
+        pendingMapFocus?.let { target ->
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(target, 16f))
+            pendingMapFocus = null
+        }
     }
 
     private fun GoogleMap.applyNebulaMapStyle() {
@@ -176,9 +209,7 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
                     R.raw.map_style_nebula,
                 ),
             )
-            if (!success) {
-                Log.e("GeneratedItemFragment", "Map style parsing failed.")
-            }
+            if (!success) Log.e("GeneratedItemFragment", "Map style parsing failed.")
         } catch (exception: Resources.NotFoundException) {
             Log.e("GeneratedItemFragment", "Map style resource not found.", exception)
         }
@@ -187,39 +218,34 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
     private fun updateMapForDay(pageIndex: Int) {
         val map = googleMap ?: return
         map.clear()
+        updateDayArrows()
 
-        val plan = currentPlan ?: return
-        val dayPlan = plan.dayPlans.getOrNull(pageIndex) ?: return
-
-        val points = dayPlan.attractions.map { attr ->
-            if (attr.latitude != null && attr.longitude != null) {
-                LatLng(attr.latitude, attr.longitude)
+        val dayPlan = currentPlan?.dayPlans?.getOrNull(pageIndex) ?: return
+        val points = dayPlan.attractions.map { attraction ->
+            if (attraction.latitude != null && attraction.longitude != null) {
+                LatLng(attraction.latitude, attraction.longitude)
             } else {
-                PlaceCoordinateResolver.resolve(attr.name)
+                PlaceCoordinateResolver.resolve(attraction.name)
             }
         }
 
         if (points.isEmpty()) return
 
-        // Draw labelled markers (category pictogram + place name) so each stop is readable at a
-        // glance without tapping it.
-        val ctx = context
-        dayPlan.attractions.forEachIndexed { index, attr ->
-            val latLng = points[index]
-            val category = determineCategory(attr.name, attr.description)
+        val context = context
+        dayPlan.attractions.forEachIndexed { index, attraction ->
+            val category = determineCategory(attraction.name, attraction.description)
             val details = getCategoryDetails(category)
-
             val markerOptions = MarkerOptions()
-                .position(latLng)
-                .title("${attr.sequence}. ${attr.name}")
-                .snippet(attr.description)
+                .position(points[index])
+                .title("${attraction.sequence}. ${attraction.name}")
+                .snippet(attraction.description)
 
-            if (ctx != null) {
+            if (context != null) {
                 markerOptions
                     .icon(
                         LabeledMarkerFactory.create(
-                            context = ctx,
-                            label = "${attr.sequence}. ${attr.name}",
+                            context = context,
+                            label = "${attraction.sequence}. ${attraction.name}",
                             accentColor = details.second,
                             iconRes = details.first,
                         ),
@@ -232,143 +258,95 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
             map.addMarker(markerOptions)
         }
 
-        // Focus camera bounds
         if (points.size == 1) {
             map.animateCamera(CameraUpdateFactory.newLatLngZoom(points.first(), 14f))
         } else {
             val builder = LatLngBounds.builder()
             points.forEach { builder.include(it) }
             runCatching {
-                val bounds = builder.build()
-                map.animateCamera(CameraUpdateFactory.newLatLngBounds(bounds, 120))
+                map.animateCamera(CameraUpdateFactory.newLatLngBounds(builder.build(), 120))
             }.onFailure {
                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(points.first(), 11f))
             }
         }
     }
 
-    private fun getBitmapDescriptorFromVector(vectorResId: Int, colorTint: Int): com.google.android.gms.maps.model.BitmapDescriptor? {
+    private fun focusMap(name: String, latitude: Double?, longitude: Double?) {
+        val latLng = if (latitude != null && longitude != null) {
+            LatLng(latitude, longitude)
+        } else {
+            PlaceCoordinateResolver.resolve(name)
+        }
+        setMapVisible(true)
+        val map = googleMap
+        if (map == null) {
+            pendingMapFocus = latLng
+        } else {
+            map.animateCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f))
+        }
+    }
+
+    private fun openPlaceDetails(placeName: String) {
+        val query = Uri.encode(placeName)
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://www.google.com/search?q=$query"))
+        startActivity(intent)
+    }
+
+    private fun applyEditMode(editable: Boolean) {
+        generatedTitle.isEnabled = editable
+        generatedTitle.isFocusable = editable
+        generatedTitle.isFocusableInTouchMode = editable
+        adapter.setEditable(editable)
+        updatePlanActions()
+    }
+
+    private fun updatePlanActions() {
+        val isSavedPlan = viewModel.loadedSavedPlan.value != null
+        btnEditPlan.visibility = if (isSavedPlan && !currentEditable) View.VISIBLE else View.GONE
+        btnDeletePlan.visibility = if (isSavedPlan) View.VISIBLE else View.GONE
+        btnApprovePlan.visibility = if (!isSavedPlan || currentEditable) View.VISIBLE else View.GONE
+        btnApprovePlan.text = if (isSavedPlan) "Save changes" else "Save"
+    }
+
+    private fun updateDayArrows() {
+        val count = currentPlan?.dayPlans?.size ?: 0
+        val index = viewPager.currentItem
+        dayArrowLeft.visibility = if (count > 1 && index > 0) View.VISIBLE else View.GONE
+        dayArrowRight.visibility = if (count > 1 && index < count - 1) View.VISIBLE else View.GONE
+    }
+
+    private fun setMapVisible(visible: Boolean) {
+        mapPanel.visibility = if (visible) View.VISIBLE else View.GONE
+        btnToggleMap.text = if (visible) "Hide map" else "Show map"
+        if (visible) {
+            ensureMapFragment()
+            updateMapForDay(viewPager.currentItem)
+        }
+    }
+
+    private fun confirmDeletePlan() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete itinerary")
+            .setMessage("Delete this saved itinerary?")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Delete") { _, _ ->
+                viewModel.deleteCurrentSavedPlan()
+            }
+            .show()
+    }
+
+    private fun getBitmapDescriptorFromVector(
+        vectorResId: Int,
+        colorTint: Int,
+    ): com.google.android.gms.maps.model.BitmapDescriptor? {
         val context = context ?: return null
         val vectorDrawable = ContextCompat.getDrawable(context, vectorResId) ?: return null
         val wrappedDrawable = androidx.core.graphics.drawable.DrawableCompat.wrap(vectorDrawable).mutate()
         androidx.core.graphics.drawable.DrawableCompat.setTint(wrappedDrawable, colorTint)
-        
-        val width = 56
-        val height = 56
-        wrappedDrawable.setBounds(0, 0, width, height)
-        
-        val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
+        val bitmap = android.graphics.Bitmap.createBitmap(56, 56, android.graphics.Bitmap.Config.ARGB_8888)
         val canvas = android.graphics.Canvas(bitmap)
+        wrappedDrawable.setBounds(0, 0, 56, 56)
         wrappedDrawable.draw(canvas)
-        
         return com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(bitmap)
-    }
-
-    private fun showAddPlaceDialog(dayNum: Int) {
-        val dialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_add_place, null)
-        val etPlaceName = dialogView.findViewById<EditText>(R.id.etPlaceName)
-        val spPlaceCategory = dialogView.findViewById<Spinner>(R.id.spPlaceCategory)
-        val etPlaceLatitude = dialogView.findViewById<EditText>(R.id.etPlaceLatitude)
-        val etPlaceLongitude = dialogView.findViewById<EditText>(R.id.etPlaceLongitude)
-        val btnPickOnMap = dialogView.findViewById<Button>(R.id.btnPickOnMap)
-
-        // Pre-populate coordinates with current day's first attraction coordinates if available
-        currentPlan?.dayPlans?.find { it.day == dayNum }?.attractions?.firstOrNull { it.latitude != null && it.longitude != null }?.let { attr ->
-            etPlaceLatitude.setText(attr.latitude.toString())
-            etPlaceLongitude.setText(attr.longitude.toString())
-        }
-
-        // Set up spinner
-        val categories = AttractionCategory.values()
-        val categoryDisplayNames = categories.map { it.displayName }.toTypedArray()
-        val spinnerAdapter = ArrayAdapter(
-            requireContext(),
-            android.R.layout.simple_spinner_item,
-            categoryDisplayNames
-        ).apply {
-            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-        }
-        spPlaceCategory.adapter = spinnerAdapter
-
-        // Set up map picker button
-        btnPickOnMap.setOnClickListener {
-            val mapDialogView = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_map_picker, null)
-            val mapView = mapDialogView.findViewById<com.google.android.gms.maps.MapView>(R.id.mapPickerView)
-            
-            var selectedLatLng: LatLng? = null
-
-            mapView.onCreate(null)
-            mapView.onResume()
-            mapView.getMapAsync { map ->
-                map.mapType = GoogleMap.MAP_TYPE_NORMAL
-                
-                // Camera focus logic
-                val currentLat = etPlaceLatitude.text.toString().toDoubleOrNull()
-                val currentLng = etPlaceLongitude.text.toString().toDoubleOrNull()
-                if (currentLat != null && currentLng != null) {
-                    val pos = LatLng(currentLat, currentLng)
-                    map.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 14f))
-                    map.addMarker(MarkerOptions().position(pos))
-                    selectedLatLng = pos
-                } else {
-                    currentPlan?.dayPlans?.flatMap { it.attractions }?.firstOrNull { it.latitude != null && it.longitude != null }?.let { attr ->
-                        val pos = LatLng(attr.latitude!!, attr.longitude!!)
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(pos, 13f))
-                    } ?: run {
-                        map.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(35.1795, 129.0756), 11f))
-                    }
-                }
-
-                map.setOnMapClickListener { latLng ->
-                    map.clear()
-                    map.addMarker(MarkerOptions().position(latLng))
-                    selectedLatLng = latLng
-                }
-            }
-
-            AlertDialog.Builder(requireContext())
-                .setView(mapDialogView)
-                .setPositiveButton("선택 완료") { _, _ ->
-                    selectedLatLng?.let { latLng ->
-                        etPlaceLatitude.setText(latLng.latitude.toString())
-                        etPlaceLongitude.setText(latLng.longitude.toString())
-                    }
-                    mapView.onPause()
-                    mapView.onDestroy()
-                }
-                .setNegativeButton("취소") { _, _ ->
-                    mapView.onPause()
-                    mapView.onDestroy()
-                }
-                .setOnDismissListener {
-                    mapView.onPause()
-                    mapView.onDestroy()
-                }
-                .show()
-        }
-
-        AlertDialog.Builder(requireContext())
-            .setView(dialogView)
-            .setPositiveButton("추가") { _, _ ->
-                val name = etPlaceName.text.toString().trim()
-                if (name.isBlank()) {
-                    Toast.makeText(requireContext(), "이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                val categoryIndex = spPlaceCategory.selectedItemPosition
-                val selectedCategory = categories.getOrNull(categoryIndex) ?: AttractionCategory.ACTIVITY
-                val lat = etPlaceLatitude.text.toString().toDoubleOrNull() ?: 0.0
-                val lng = etPlaceLongitude.text.toString().toDoubleOrNull() ?: 0.0
-
-                viewModel.addCustomAttraction(
-                    dayNum = dayNum,
-                    name = name,
-                    categoryName = selectedCategory.displayName,
-                    lat = lat,
-                    lng = lng
-                )
-            }
-            .setNegativeButton("취소", null)
-            .show()
     }
 }

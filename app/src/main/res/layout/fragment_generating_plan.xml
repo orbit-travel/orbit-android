@@ -6,298 +6,301 @@
     android:background="@color/orbit_space"
     android:paddingStart="20dp"
     android:paddingEnd="20dp"
-    android:paddingTop="56dp"
-    android:clipToPadding="false">
+    android:paddingTop="56dp">
 
-    <!-- INPUT PHASE LAYOUT -->
     <ScrollView
         android:id="@+id/layoutInputs"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
         android:fillViewport="true"
-        android:visibility="visible">
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="24dp">
+            android:orientation="vertical"
+            android:paddingBottom="28dp">
 
             <TextView
-                android:id="@+id/plannerTitle"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:text="AI Travel Planner"
                 android:textColor="@color/white"
                 android:textSize="22sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:textStyle="bold" />
 
-            <!-- Destination input -->
-            <EditText
-                android:id="@+id/inputDestination"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:hint="@string/planner_destination_hint"
-                android:inputType="text"
-                android:focusable="false"
-                android:clickable="true"
-                android:drawableEnd="@android:drawable/ic_menu_search"
-                android:drawableTint="@color/orbit_text_secondary"
-                android:textColor="@color/white"
-                android:textColorHint="@color/orbit_text_secondary"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/plannerTitle" />
-
-            <!-- Days input -->
-            <EditText
-                android:id="@+id/inputDays"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:hint="@string/planner_days_hint"
-                android:inputType="number"
-                android:textColor="@color/white"
-                android:textColorHint="@color/orbit_text_secondary"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/inputDestination" />
-
-            <!-- Style selection -->
             <TextView
-                android:id="@+id/labelStyle"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Style Preferences"
+                android:layout_marginTop="18dp"
+                android:text="Travel Dates *"
                 android:textColor="@color/white"
                 android:textSize="13sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/inputDays" />
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnStartDate"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Start date" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEndDate"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:text="End date" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Regions *"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:id="@+id/regionContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAddRegion"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="+ Add region" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Style *"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
             <com.google.android.material.chip.ChipGroup
                 android:id="@+id/chipGroupStyle"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/labelStyle">
+                android:layout_marginTop="6dp">
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chipExtreme"
+                    android:id="@+id/chipPopular"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Extreme"
-                    android:checkable="true" />
+                    android:checked="true"
+                    android:checkable="true"
+                    android:text="Popular" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipAny"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="Any" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipFood"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Food"
-                    android:checkable="true" />
+                    android:checkable="true"
+                    android:text="Food" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipNature"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Nature"
-                    android:checkable="true" />
+                    android:checkable="true"
+                    android:text="Nature" />
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipCulture"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Culture"
-                    android:checkable="true" />
+                    android:checkable="true"
+                    android:text="Culture" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipShopping"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="Shopping" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipRelax"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="Relax" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipNightlife"
+                    style="@style/Widget.Material3.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checkable="true"
+                    android:text="Nightlife" />
             </com.google.android.material.chip.ChipGroup>
 
-            <!-- Radius selection -->
             <TextView
-                android:id="@+id/labelRadius"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="Search Radius (검색 반경)"
+                android:layout_marginTop="18dp"
+                android:text="Travel Timing"
                 android:textColor="@color/white"
                 android:textSize="13sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/chipGroupStyle" />
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnArrivalTime"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Arrival time" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnDepartureTime"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:text="Return time" />
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="Main Transport"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
             <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupRadius"
-                android:layout_width="0dp"
+                android:id="@+id/chipGroupTransport"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:singleSelection="true"
-                app:selectionRequired="true"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/labelRadius">
+                app:singleSelection="true">
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRadius1"
+                    android:id="@+id/chipTransit"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1 km"
-                    android:tag="1.0"
                     android:checkable="true"
-                    android:checked="true" />
+                    android:text="Public transit" />
 
                 <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRadius15"
+                    android:id="@+id/chipCar"
                     style="@style/Widget.Material3.Chip.Filter"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="1.5 km"
-                    android:tag="1.5"
-                    android:checkable="true" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRadius3"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="3 km"
-                    android:tag="3.0"
-                    android:checkable="true" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRadius5"
-                    style="@style/Widget.Material3.Chip.Filter"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="5 km"
-                    android:tag="5.0"
-                    android:checkable="true" />
+                    android:checkable="true"
+                    android:text="Car" />
             </com.google.android.material.chip.ChipGroup>
 
-            <!-- Generate recommendations trigger button -->
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnFindRecommendations"
-                android:layout_width="0dp"
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
-                android:text="추천 장소 조회하기"
-                android:textColor="@color/orbit_space"
-                app:backgroundTint="@color/orbit_primary"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/chipGroupRadius" />
+                android:layout_marginTop="18dp"
+                android:text="Lodging by Night"
+                android:textColor="@color/white"
+                android:textSize="13sp"
+                android:textStyle="bold" />
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+            <LinearLayout
+                android:id="@+id/lodgingContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:orientation="vertical" />
+
+            <TextView
+                android:id="@+id/txtError"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:textColor="#FF6B6B"
+                android:textSize="13sp"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnGeneratePlan"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Generate AI itinerary"
+                android:textColor="@color/orbit_space"
+                app:backgroundTint="@color/orbit_primary" />
+        </LinearLayout>
     </ScrollView>
 
-    <!-- CARD SELECTION PHASE LAYOUT -->
-    <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/layoutRecommendations"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone">
-
-        <!-- Small Header -->
-        <ImageButton
-            android:id="@+id/btnBackToInputs"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_marginTop="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:src="@android:drawable/ic_menu_revert"
-            android:contentDescription="Go Back"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+    <LinearLayout
+        android:id="@+id/layoutLoading"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:id="@+id/txtRecommendationSummary"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textColor="@color/white"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            app:layout_constraintBottom_toBottomOf="@id/btnBackToInputs"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/btnBackToInputs"
-            app:layout_constraintTop_toTopOf="@id/btnBackToInputs" />
-
-        <!-- Cards ViewPager2 -->
-        <androidx.viewpager2.widget.ViewPager2
-            android:id="@+id/recommendationsPager"
-            android:layout_width="0dp"
-            android:layout_height="0dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="12dp"
-            app:layout_constraintBottom_toTopOf="@id/txtSelectedCount"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnBackToInputs" />
-
-        <!-- Selected count -->
-        <TextView
-            android:id="@+id/txtSelectedCount"
+            android:id="@+id/txtLoadingEmoji"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:text="선택된 장소: 0개"
-            android:textColor="@color/orbit_text_secondary"
-            android:textSize="14sp"
-            app:layout_constraintBottom_toTopOf="@id/btnConfirmItinerary"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
+            android:text="🪐"
+            android:textSize="44sp" />
 
-        <!-- Bottom confirmation button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnConfirmItinerary"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/txtLoading"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            android:text="선택된 장소로 일정 확정하기"
-            android:textColor="@color/orbit_space"
-            android:enabled="false"
-            app:backgroundTint="@color/orbit_primary"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <!-- LOADING & ERROR OVERLAY -->
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:indeterminateTint="@color/orbit_primary"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/txtError"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:textColor="#FF6B6B"
-        android:textSize="14sp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
+            android:layout_marginTop="12dp"
+            android:gravity="center"
+            android:text="AI is building your itinerary"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

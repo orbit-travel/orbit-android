@@ -12,6 +12,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.pnu.orbit.R
 import com.pnu.orbit.data.local.entity.SavedTravelPlanEntity
+import com.pnu.orbit.ui.addtrip.RangeCalendarView.PlannedDateDecoration
 import com.pnu.orbit.ui.addtrip.RangeCalendarView
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -22,38 +23,29 @@ class TravelCalendarFragment : Fragment() {
 
     private val viewModel: TravelPlannerViewModel by viewModels({ requireParentFragment() })
 
-    private lateinit var tvTitle: TextView
     private lateinit var calendarMonthTitle: TextView
-    private lateinit var buttonPreviousMonth: MaterialButton
-    private lateinit var buttonNextMonth: MaterialButton
     private lateinit var travelCalendarView: RangeCalendarView
-    private lateinit var btnAiRecommend: ExtendedFloatingActionButton
 
     private var displayedMonthMillis = System.currentTimeMillis()
-    private val monthFormat = SimpleDateFormat("yyyy년 M월", Locale.KOREAN)
+    private val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
-        savedInstanceState: Bundle?
+        savedInstanceState: Bundle?,
     ): View = inflater.inflate(R.layout.fragment_travel_calendar, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        tvTitle = view.findViewById(R.id.tvTitle)
         calendarMonthTitle = view.findViewById(R.id.calendarMonthTitle)
-        buttonPreviousMonth = view.findViewById(R.id.buttonPreviousMonth)
-        buttonNextMonth = view.findViewById(R.id.buttonNextMonth)
         travelCalendarView = view.findViewById(R.id.travelCalendarView)
-        btnAiRecommend = view.findViewById(R.id.btnAiRecommend)
 
         updateMonthHeader()
 
-        buttonPreviousMonth.setOnClickListener { moveDisplayedMonth(-1) }
-        buttonNextMonth.setOnClickListener { moveDisplayedMonth(1) }
-
-        btnAiRecommend.setOnClickListener {
+        view.findViewById<MaterialButton>(R.id.buttonPreviousMonth).setOnClickListener { moveDisplayedMonth(-1) }
+        view.findViewById<MaterialButton>(R.id.buttonNextMonth).setOnClickListener { moveDisplayedMonth(1) }
+        view.findViewById<ExtendedFloatingActionButton>(R.id.btnAiRecommend).setOnClickListener {
             viewModel.navigateToGenerating()
         }
 
@@ -62,12 +54,11 @@ class TravelCalendarFragment : Fragment() {
         }
 
         travelCalendarView.onDateClicked = { clickedMillis ->
-            val plans = viewModel.savedPlans.value.orEmpty()
-            val matchedPlan = findPlanForDate(clickedMillis, plans)
+            val matchedPlan = findPlanForDate(clickedMillis, viewModel.savedPlans.value.orEmpty())
             if (matchedPlan != null) {
                 viewModel.loadSavedPlan(matchedPlan)
             } else {
-                Toast.makeText(requireContext(), "이 날짜에는 등록된 여행 계획이 없습니다.", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "No saved itinerary for this date.", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -92,57 +83,56 @@ class TravelCalendarFragment : Fragment() {
     }
 
     private fun renderPlans(plans: List<SavedTravelPlanEntity>) {
-        val allPlannedDates = mutableSetOf<Long>()
+        val decorations = mutableMapOf<Long, PlannedDateDecoration>()
         plans.forEach { plan ->
-            allPlannedDates.addAll(getDatesForPlan(plan))
+            getDatesForPlan(plan).forEach { date ->
+                decorations[date] = PlannedDateDecoration(
+                    title = plan.destination,
+                    color = plan.color.takeIf { it != 0 } ?: fallbackColor(plan.id),
+                )
+            }
         }
-        travelCalendarView.setPlannedDates(allPlannedDates)
+        travelCalendarView.setPlannedDateDecorations(decorations)
     }
 
     private fun getDatesForPlan(plan: SavedTravelPlanEntity): List<Long> {
         val sdf = SimpleDateFormat("yyyy-MM-dd", Locale.US)
         val startCalendar = Calendar.getInstance()
-        try {
-            val date = sdf.parse(plan.startDate)
-            if (date != null) {
-                startCalendar.time = date
-            }
-        } catch (e: Exception) {
-            return emptyList()
-        }
-        val dates = mutableListOf<Long>()
-        for (i in 0 until plan.days) {
-            dates.add(startCalendar.timeInMillis)
+        val date = runCatching { sdf.parse(plan.startDate) }.getOrNull() ?: return emptyList()
+        startCalendar.time = date
+
+        return (0 until plan.days).map {
+            val millis = startCalendar.timeInMillis
             startCalendar.add(Calendar.DAY_OF_MONTH, 1)
+            millis
         }
-        return dates
     }
 
     private fun findPlanForDate(clickedMillis: Long, plans: List<SavedTravelPlanEntity>): SavedTravelPlanEntity? {
-        val clickedCal = Calendar.getInstance().apply {
-            timeInMillis = clickedMillis
+        val clickedDay = startOfDay(clickedMillis)
+        return plans.firstOrNull { plan ->
+            getDatesForPlan(plan).map(::startOfDay).contains(clickedDay)
+        }
+    }
+
+    private fun startOfDay(millis: Long): Long =
+        Calendar.getInstance().apply {
+            timeInMillis = millis
             set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
-        }
-        val clickedDay = clickedCal.timeInMillis
+        }.timeInMillis
 
-        for (plan in plans) {
-            val dates = getDatesForPlan(plan)
-            val dateDayList = dates.map {
-                Calendar.getInstance().apply {
-                    timeInMillis = it
-                    set(Calendar.HOUR_OF_DAY, 0)
-                    set(Calendar.MINUTE, 0)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }.timeInMillis
-            }
-            if (dateDayList.contains(clickedDay)) {
-                return plan
-            }
-        }
-        return null
+    private fun fallbackColor(id: Long): Int {
+        val palette = listOf(
+            0xFF64D2FF.toInt(),
+            0xFFFFD166.toInt(),
+            0xFF98DFAF.toInt(),
+            0xFFFF6B6B.toInt(),
+            0xFFD68CFC.toInt(),
+            0xFFF472B6.toInt(),
+        )
+        return palette[(id % palette.size).toInt().coerceAtLeast(0)]
     }
 }

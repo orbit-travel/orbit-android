@@ -66,11 +66,11 @@ class RecommendationCardAdapter(
             // Render select state
             if (isSelected) {
                 selectionIndicator.visibility = View.VISIBLE
-                btnApprove.text = "선택됨"
+                btnApprove.text = "Selected"
                 btnReject.visibility = View.VISIBLE
             } else {
                 selectionIndicator.visibility = View.GONE
-                btnApprove.text = "O 선택"
+                btnApprove.text = "Select"
                 // Let's show btnReject always as an action to deselect/reject
             }
 

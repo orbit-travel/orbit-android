@@ -12,6 +12,8 @@ import com.pnu.orbit.data.mapper.toSavedEntity
 import com.pnu.orbit.data.local.entity.SavedTravelPlanEntity
 import com.pnu.orbit.domain.model.Attraction
 import com.pnu.orbit.domain.model.DayPlan
+import com.pnu.orbit.domain.model.PlannerAccommodation
+import com.pnu.orbit.domain.model.PlannerPlace
 import com.pnu.orbit.domain.model.PlannerRequest
 import com.pnu.orbit.domain.model.TimeType
 import com.pnu.orbit.domain.model.TravelPlan
@@ -40,6 +42,14 @@ class TravelPlannerViewModel(
     private val _savedPlans = MutableLiveData<List<SavedTravelPlanEntity>>(emptyList())
     val savedPlans: LiveData<List<SavedTravelPlanEntity>> = _savedPlans
 
+    private val _isPlanEditable = MutableLiveData(true)
+    val isPlanEditable: LiveData<Boolean> = _isPlanEditable
+
+    private val _loadedSavedPlan = MutableLiveData<SavedTravelPlanEntity?>(null)
+    val loadedSavedPlan: LiveData<SavedTravelPlanEntity?> = _loadedSavedPlan
+
+    private var generatedStartDate: String? = null
+
     init {
         loadSavedPlans()
         viewModelScope.launch {
@@ -64,6 +74,9 @@ class TravelPlannerViewModel(
         _plan.value = UiState.Empty
         _recommendations.value = UiState.Empty
         _selectedRecommendations.value = emptySet()
+        generatedStartDate = null
+        _loadedSavedPlan.value = null
+        _isPlanEditable.value = true
         _navigationState.value = PlannerNavigation.CALENDAR
     }
 
@@ -131,7 +144,23 @@ class TravelPlannerViewModel(
         }
     }
 
-    fun generatePlan(destination: String, days: Int, style: String, latitude: Double? = null, longitude: Double? = null) {
+    fun generatePlan(
+        destination: String,
+        days: Int,
+        style: String,
+        latitude: Double? = null,
+        longitude: Double? = null,
+        startDate: String? = null,
+        endDate: String? = null,
+        regions: List<PlannerPlace> = emptyList(),
+        accommodations: List<PlannerAccommodation> = emptyList(),
+        arrivalTime: String? = null,
+        departureTime: String? = null,
+        transportMode: String? = null,
+    ) {
+        generatedStartDate = startDate
+        _loadedSavedPlan.value = null
+        _isPlanEditable.value = true
         _plan.value = UiState.Loading
         viewModelScope.launch {
             try {
@@ -142,7 +171,14 @@ class TravelPlannerViewModel(
                             days = days,
                             style = style,
                             latitude = latitude,
-                            longitude = longitude
+                            longitude = longitude,
+                            startDate = startDate,
+                            endDate = endDate,
+                            regions = regions,
+                            accommodations = accommodations,
+                            arrivalTime = arrivalTime,
+                            departureTime = departureTime,
+                            transportMode = transportMode,
                         )
                     )
                 }
@@ -227,6 +263,31 @@ class TravelPlannerViewModel(
             }
             val updatedPlan = plan.copy(dayPlans = updatedDayPlans)
             saveAndPostPlan(updatedPlan)
+        }
+    }
+
+    fun reorderAttraction(fromDayNum: Int, fromIndex: Int, toDayNum: Int, toIndex: Int) {
+        val state = _plan.value
+        if (state is UiState.Success) {
+            val plan = state.data
+            val mutableDays = plan.dayPlans.map { it.day to it.attractions.toMutableList() }.toMap().toMutableMap()
+            val fromList = mutableDays[fromDayNum] ?: return
+            if (fromIndex !in fromList.indices) return
+            val moving = fromList.removeAt(fromIndex)
+            val targetList = mutableDays[toDayNum] ?: return
+            val safeIndex = toIndex.coerceIn(0, targetList.size)
+            targetList.add(safeIndex, moving)
+
+            val updatedDayPlans = plan.dayPlans.map { dayPlan ->
+                val reordered = mutableDays[dayPlan.day].orEmpty().mapIndexed { index, attraction ->
+                    attraction.copy(
+                        sequence = index + 1,
+                        timeType = if (dayPlan.day == fromDayNum && dayPlan.day != toDayNum) TimeType.NONE else attraction.timeType,
+                    )
+                }
+                dayPlan.copy(attractions = reordered)
+            }
+            saveAndPostPlan(plan.copy(dayPlans = updatedDayPlans))
         }
     }
 
@@ -338,8 +399,8 @@ class TravelPlannerViewModel(
                     val newAttr = Attraction(
                         sequence = newSeq,
                         name = name,
-                        description = "사용자 추가 장소 ($categoryName)",
-                        imageUrl = "", // empty string so it falls back to the demo image
+                        description = "User added place ($categoryName)",
+                        imageUrl = null,
                         latitude = lat,
                         longitude = lng,
                         timeType = TimeType.NONE
@@ -367,8 +428,17 @@ class TravelPlannerViewModel(
         _navigationState.value = PlannerNavigation.GENERATED
     }
 
-    fun navigateToConfirm() {
-        _navigationState.value = PlannerNavigation.CONFIRM
+    fun enableCurrentPlanEditing() {
+        _isPlanEditable.value = true
+    }
+
+    fun updatePlanTitle(title: String) {
+        val trimmed = title.trim()
+        if (trimmed.isBlank()) return
+        val state = _plan.value
+        if (state is UiState.Success) {
+            saveAndPostPlan(state.data.copy(destination = trimmed))
+        }
     }
 
     fun loadSavedPlans() {
@@ -408,14 +478,72 @@ class TravelPlannerViewModel(
         }
     }
 
+    fun saveCurrentPlan(title: String) {
+        val state = _plan.value
+        if (state !is UiState.Success) return
+        val savedPlan = _loadedSavedPlan.value
+        val startDate = generatedStartDate ?: savedPlan?.startDate ?: return
+        val cleanTitle = title.trim().ifBlank { state.data.destination }
+        val planForSave = state.data.copy(
+            id = savedPlan?.id ?: 0L,
+            destination = cleanTitle,
+        )
+        val color = savedPlan?.color?.takeIf { it != 0 } ?: nextPlanColor()
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val database = com.pnu.orbit.data.local.db.OrbitDatabase.getInstance(getApplication())
+                val savedEntity = planForSave.toSavedEntity(startDate, color)
+                val savedId = database.savedTravelPlanDao().insertSavedPlan(savedEntity)
+                if (savedPlan == null && state.data.id != 0L) {
+                    database.planDao().deletePlanById(state.data.id)
+                }
+                _loadedSavedPlan.postValue(savedEntity.copy(id = if (savedPlan == null) savedId else savedEntity.id))
+            }
+            _isPlanEditable.value = false
+            loadSavedPlans()
+            _navigationState.value = PlannerNavigation.CALENDAR
+        }
+    }
+
+    fun deleteCurrentSavedPlan() {
+        val savedPlan = _loadedSavedPlan.value ?: return
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val database = com.pnu.orbit.data.local.db.OrbitDatabase.getInstance(getApplication())
+                database.savedTravelPlanDao().deleteSavedPlanById(savedPlan.id)
+            }
+            startNewPlan()
+            loadSavedPlans()
+        }
+    }
+
     fun loadSavedPlan(savedPlanEntity: SavedTravelPlanEntity) {
         viewModelScope.launch {
             val domainPlan = withContext(Dispatchers.IO) {
                 savedPlanEntity.toDomain()
             }
             _plan.value = UiState.Success(domainPlan)
+            generatedStartDate = savedPlanEntity.startDate
+            _loadedSavedPlan.value = savedPlanEntity
+            _isPlanEditable.value = false
             _navigationState.value = PlannerNavigation.GENERATED
         }
+    }
+
+    private fun nextPlanColor(): Int {
+        val recentColor = _savedPlans.value.orEmpty().firstOrNull()?.color
+        val palette = listOf(
+            0xFF64D2FF.toInt(),
+            0xFFFFD166.toInt(),
+            0xFF98DFAF.toInt(),
+            0xFFFF6B6B.toInt(),
+            0xFFD68CFC.toInt(),
+            0xFFF472B6.toInt(),
+            0xFF4CAF50.toInt(),
+        )
+        val candidates = palette.filter { it != recentColor }
+        return candidates.random()
     }
 }
 
@@ -423,6 +551,5 @@ enum class PlannerNavigation {
     CALENDAR,
     GENERATING,
     GENERATED,
-    CONFIRM
 }
 

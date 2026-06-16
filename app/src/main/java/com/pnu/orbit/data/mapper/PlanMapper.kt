@@ -133,14 +133,15 @@ fun PlanEntity.toDomain(): TravelPlan =
         )
     }
 
-fun TravelPlan.toSavedEntity(startDate: String): SavedTravelPlanEntity = SavedTravelPlanEntity(
+fun TravelPlan.toSavedEntity(startDate: String, color: Int = 0): SavedTravelPlanEntity = SavedTravelPlanEntity(
     id = id,
     destination = destination,
     days = days,
     style = style,
     planJson = gson.toJson(this),
     startDate = startDate,
-    createdAt = createdAt
+    createdAt = createdAt,
+    color = color,
 )
 
 fun SavedTravelPlanEntity.toDomain(): TravelPlan =

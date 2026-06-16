@@ -20,6 +20,11 @@ class RangeCalendarView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr) {
     var onDateClicked: ((Long) -> Unit)? = null
 
+    data class PlannedDateDecoration(
+        val title: String,
+        val color: Int,
+    )
+
     private val calendar = Calendar.getInstance(Locale.US)
     private val dayPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = ContextCompat.getColor(context, R.color.white)
@@ -54,13 +59,27 @@ class RangeCalendarView @JvmOverloads constructor(
     private var endDateMillis: Long? = null
 
     private var plannedDates = setOf<Long>()
+    private var plannedDateDecorations = emptyMap<Long, PlannedDateDecoration>()
     private val plannedPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = ContextCompat.getColor(context, R.color.orbit_primary)
         alpha = 76 // ~30% opacity
     }
+    private val plannedTitlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = ContextCompat.getColor(context, R.color.white)
+        textAlign = Paint.Align.CENTER
+        textSize = 8f.sp
+        isFakeBoldText = true
+    }
 
     fun setPlannedDates(dates: Set<Long>) {
         plannedDates = dates.map { startOfDay(it) }.toSet()
+        plannedDateDecorations = emptyMap()
+        invalidate()
+    }
+
+    fun setPlannedDateDecorations(decorations: Map<Long, PlannedDateDecoration>) {
+        plannedDateDecorations = decorations.mapKeys { startOfDay(it.key) }
+        plannedDates = plannedDateDecorations.keys
         invalidate()
     }
 
@@ -119,8 +138,11 @@ class RangeCalendarView @JvmOverloads constructor(
             val isStartOrEnd = isSameDay(dateMillis, startDateMillis) ||
                 isSameDay(dateMillis, endDateMillis)
 
+            val plannedDecoration = plannedDateDecorations[startOfDay(dateMillis)]
             val isPlanned = plannedDates.contains(startOfDay(dateMillis))
             if (isPlanned) {
+                plannedPaint.color = plannedDecoration?.color ?: ContextCompat.getColor(context, R.color.orbit_primary)
+                plannedPaint.alpha = 150
                 val planRect = RectF(
                     left + 4f.dp,
                     top + 5f.dp,
@@ -152,9 +174,18 @@ class RangeCalendarView @JvmOverloads constructor(
             canvas.drawText(
                 day.toString(),
                 centerX,
-                centerY - (textPaint.descent() + textPaint.ascent()) / 2f,
+                centerY - if (plannedDecoration != null) 7f.dp else (textPaint.descent() + textPaint.ascent()) / 2f,
                 textPaint,
             )
+            plannedDecoration?.let { decoration ->
+                val label = decoration.title.take(8)
+                canvas.drawText(
+                    label,
+                    centerX,
+                    centerY + 13f.dp,
+                    plannedTitlePaint,
+                )
+            }
         }
     }
 
