@@ -2,6 +2,7 @@ package com.pnu.orbit.ui.addtrip
 
 import android.content.Context
 import android.net.Uri
+import android.os.Build
 import android.provider.MediaStore
 import androidx.exifinterface.media.ExifInterface
 import java.text.ParseException
@@ -12,7 +13,12 @@ class PhotoMetadataReader(
     private val context: Context,
 ) {
     fun read(uri: Uri, fallbackOrder: Int): PhotoDraft {
-        val exif = readExif(uri)
+        // Photos chosen via the system picker have their GPS EXIF redacted by default; ask for the
+        // un-redacted original so location-tagged photos place themselves automatically. This only
+        // yields data when the app holds ACCESS_MEDIA_LOCATION and the source keeps it, and degrades
+        // to "no location" otherwise.
+        val sourceUri = originalUriOrSame(uri)
+        val exif = readExif(sourceUri)
         val latLong = exif?.latLong
         val takenAt = readTakenAtFromExif(exif) ?: readTakenAtFromMediaStore(uri)
 
@@ -24,6 +30,11 @@ class PhotoMetadataReader(
             lng = latLong?.getOrNull(1),
             locationName = null,
         )
+    }
+
+    private fun originalUriOrSame(uri: Uri): Uri {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return uri
+        return runCatching { MediaStore.setRequireOriginal(uri) }.getOrDefault(uri)
     }
 
     private fun readExif(uri: Uri): ExifInterface? =

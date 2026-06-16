@@ -16,6 +16,7 @@ fun PhotoEntity.toDomain(): TravelPhoto = TravelPhoto(
     locationName = locationName,
     comment = comment,
     tag = tag.toPhotoTag(),
+    cropToFill = cropToFill,
 )
 
 fun TravelPhoto.toEntity(tripIdOverride: Long? = null): PhotoEntity = PhotoEntity(
@@ -29,6 +30,7 @@ fun TravelPhoto.toEntity(tripIdOverride: Long? = null): PhotoEntity = PhotoEntit
     locationName = locationName,
     comment = comment,
     tag = tag.name.lowercase(),
+    cropToFill = cropToFill,
 )
 
 fun NewTravelPhoto.toEntity(tripId: Long, segmentId: Long?): PhotoEntity = PhotoEntity(
@@ -42,6 +44,7 @@ fun NewTravelPhoto.toEntity(tripId: Long, segmentId: Long?): PhotoEntity = Photo
     locationName = locationName,
     comment = comment,
     tag = tag.name.lowercase(),
+    cropToFill = cropToFill,
 )
 
 private fun String?.toPhotoTag(): PhotoTag =

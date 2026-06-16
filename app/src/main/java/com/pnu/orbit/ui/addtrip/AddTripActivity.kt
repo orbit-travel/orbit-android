@@ -1,7 +1,11 @@
 package com.pnu.orbit.ui.addtrip
 
+import android.Manifest
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -13,6 +17,7 @@ import android.widget.LinearLayout
 import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,6 +76,31 @@ class AddTripActivity : AppCompatActivity() {
                 launchPlaceSearch(PlaceSearchTarget.PhotoLocation(photo.draftId))
             }
 
+            override fun onPhotoReplaceRequested(photo: PhotoDraft) {
+                startReplacePhoto(photo.draftId)
+            }
+
+            override fun onPhotoDeleteRequested(photo: PhotoDraft) {
+                AlertDialog.Builder(this@AddTripActivity)
+                    .setTitle(R.string.photo_delete_confirm_title)
+                    .setMessage(R.string.photo_delete_confirm_message)
+                    .setPositiveButton(R.string.button_delete_photo) { _, _ ->
+                        viewModel.deletePhoto(photo.draftId)
+                    }
+                    .setNegativeButton(R.string.button_cancel, null)
+                    .show()
+            }
+
+            override fun onUsePreviousLocationRequested(photo: PhotoDraft) {
+                if (!viewModel.usePreviousLocation(photo.draftId)) {
+                    Toast.makeText(
+                        this@AddTripActivity,
+                        R.string.photo_previous_location_unavailable,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            }
+
             override fun onTimelineItemDeleted(itemId: Long) {
                 viewModel.deleteTimelineItem(itemId)
             }
@@ -80,6 +110,8 @@ class AddTripActivity : AppCompatActivity() {
     private var currentTimeline: List<TimelineDraft> = emptyList()
     private var airports: List<Airport> = emptyList()
     private var pendingPlaceTarget: PlaceSearchTarget? = null
+    private var pendingReplacePhotoDraftId: Long? = null
+    private var pendingPick: PendingPick? = null
     private var isEditing = false
     private var suppressTimelineScroll = true
 
@@ -95,6 +127,59 @@ class AddTripActivity : AppCompatActivity() {
         ActivityResultContracts.PickMultipleVisualMedia(MAX_PICK_COUNT),
     ) { uris ->
         viewModel.addPhotoBlock(uris)
+    }
+
+    private val replacePhotoPicker = registerForActivityResult(
+        ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        val draftId = pendingReplacePhotoDraftId
+        pendingReplacePhotoDraftId = null
+        if (uri != null && draftId != null) {
+            viewModel.replacePhoto(draftId, uri)
+        }
+    }
+
+    // Our own MediaStore grid returns real media URIs, so location-tagged photos keep their GPS.
+    private val galleryMultiLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uris = result.data
+                ?.getStringArrayListExtra(GalleryPickerActivity.EXTRA_RESULT_URIS)
+                .orEmpty()
+                .map(Uri::parse)
+            viewModel.addPhotoBlock(uris)
+        }
+    }
+
+    private val gallerySingleLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) { result ->
+        val draftId = pendingReplacePhotoDraftId
+        pendingReplacePhotoDraftId = null
+        if (result.resultCode == Activity.RESULT_OK) {
+            val uri = result.data
+                ?.getStringArrayListExtra(GalleryPickerActivity.EXTRA_RESULT_URIS)
+                ?.firstOrNull()
+                ?.let(Uri::parse)
+            if (uri != null && draftId != null) viewModel.replacePhoto(draftId, uri)
+        }
+    }
+
+    // Falls back to the system picker (no GPS) when the user declines photo-read access.
+    private val galleryPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        val pick = pendingPick
+        pendingPick = null
+        val readGranted = hasGalleryReadAccess()
+        when (pick) {
+            PendingPick.ADD ->
+                if (readGranted) launchGalleryMulti() else photoPicker.launch(imageOnlyRequest())
+            PendingPick.REPLACE ->
+                if (readGranted) launchGallerySingle() else replacePhotoPicker.launch(imageOnlyRequest())
+            null -> Unit
+        }
     }
 
     private val placeSearchLauncher = registerForActivityResult(
@@ -137,11 +222,17 @@ class AddTripActivity : AppCompatActivity() {
             viewModel.moveDisplayedMonth(1)
         }
         findViewById<Button>(R.id.buttonAddTimelineItem).setOnClickListener {
+            // Commit any in-progress photo note before the list changes underneath the editor.
+            currentFocus?.clearFocus()
             showAddItemDialog()
         }
         findViewById<Button>(R.id.buttonSaveTrip).setOnClickListener {
+            // clearFocus() commits the focused photo note via a posted runnable; defer the save so it
+            // runs after that commit and the latest note is included.
             currentFocus?.clearFocus()
-            viewModel.saveTrip(tripTitleInput.text.toString())
+            scrollView.post {
+                viewModel.saveTrip(tripTitleInput.text.toString())
+            }
         }
 
         viewModel.dateRange.observe(this, ::renderDateRange)
@@ -157,6 +248,71 @@ class AddTripActivity : AppCompatActivity() {
         viewModel.saveState.observe(this, ::renderSaveState)
 
         setupEditMode()
+    }
+
+    private fun imageOnlyRequest() =
+        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+
+    private fun readImagesPermission(): String =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+    private fun isGranted(permission: String): Boolean =
+        ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    /** True when we can query MediaStore — including Android 14's "Selected photos" partial access. */
+    private fun hasGalleryReadAccess(): Boolean {
+        if (isGranted(readImagesPermission())) return true
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+            isGranted(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+    }
+
+    private fun galleryPermissionsToRequest(): Array<String> {
+        val perms = mutableListOf(readImagesPermission())
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            perms.add(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)
+        }
+        // Required to un-redact a photo's original GPS EXIF.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            perms.add(Manifest.permission.ACCESS_MEDIA_LOCATION)
+        }
+        return perms.toTypedArray()
+    }
+
+    private fun startAddPhotos() {
+        if (hasGalleryReadAccess()) {
+            launchGalleryMulti()
+        } else {
+            pendingPick = PendingPick.ADD
+            galleryPermissionLauncher.launch(galleryPermissionsToRequest())
+        }
+    }
+
+    private fun startReplacePhoto(photoDraftId: Long) {
+        pendingReplacePhotoDraftId = photoDraftId
+        if (hasGalleryReadAccess()) {
+            launchGallerySingle()
+        } else {
+            pendingPick = PendingPick.REPLACE
+            galleryPermissionLauncher.launch(galleryPermissionsToRequest())
+        }
+    }
+
+    private fun launchGalleryMulti() {
+        galleryMultiLauncher.launch(
+            Intent(this, GalleryPickerActivity::class.java)
+                .putExtra(GalleryPickerActivity.EXTRA_MAX_COUNT, MAX_PICK_COUNT),
+        )
+    }
+
+    private fun launchGallerySingle() {
+        gallerySingleLauncher.launch(
+            Intent(this, GalleryPickerActivity::class.java)
+                .putExtra(GalleryPickerActivity.EXTRA_MAX_COUNT, 1),
+        )
     }
 
     private fun setupEditMode() {
@@ -207,9 +363,7 @@ class AddTripActivity : AppCompatActivity() {
                 when (which) {
                     0 -> viewModel.addSegment()
                     2 -> viewModel.addAccommodation()
-                    else -> photoPicker.launch(
-                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
-                    )
+                    else -> startAddPhotos()
                 }
             }
             .show()
@@ -478,6 +632,8 @@ class AddTripActivity : AppCompatActivity() {
             val photoDraftId: Long,
         ) : PlaceSearchTarget
     }
+
+    private enum class PendingPick { ADD, REPLACE }
 
     companion object {
         private const val MAX_PICK_COUNT = 20

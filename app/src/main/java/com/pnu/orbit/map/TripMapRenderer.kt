@@ -45,18 +45,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
  * Draws a trip onto an existing [GoogleMap]:
- *  - transport legs as mode-coloured lines (flight = sky-blue dashed) with a moving mode icon,
+ *  - transport legs as mode-coloured dashed curves (flights bow strongly, ground modes slightly) with
+ *    a moving mode icon,
  *  - accommodations as hotel pins,
  *  - photos as small stacked cards that fan out on tap (the stacked card hides while expanded and
  *    the cards merge back into it on the next camera move) and open a detail view via [onPhotoClick],
- *  - the whole itinerary linked in order by a thin yellow route with a soft light pulse that
- *    repeatedly travels the path so the visiting order reads at a glance; the pulse skips straight
- *    across flight legs instead of tracing the flight arc.
+ *  - the itinerary linked in order by thin yellow connectors; each contiguous yellow run gets its own
+ *    soft light pulse so the visiting order reads per cluster and never crosses a transport leg.
  * Marker and line sizes scale with the current zoom level.
  */
 class TripMapRenderer(
@@ -130,15 +132,14 @@ class TripMapRenderer(
             }
 
             val orderedPoints = mutableListOf<LatLng>()
+            // skipNextYellow[i] == true means there is NO yellow connector from point[i] to point[i+1]
+            // (a transport leg sits there), which also splits the order pulse into separate runs.
             val skipNextYellow = mutableListOf<Boolean>()
-            // flightLeg[i] == true means the leg from orderedPoints[i] to [i+1] is a flight.
-            val flightLeg = mutableListOf<Boolean>()
             val cameraPoints = mutableListOf<LatLng>()
 
-            fun addPoint(point: LatLng, transportInternal: Boolean, flight: Boolean = false) {
+            fun addPoint(point: LatLng, transportInternal: Boolean) {
                 orderedPoints.add(point)
                 skipNextYellow.add(transportInternal)
-                flightLeg.add(flight)
                 cameraPoints.add(point)
             }
 
@@ -161,7 +162,7 @@ class TripMapRenderer(
                     val end = segment.arrivalLatLng()
                         ?: PlaceCoordinateResolver.resolve(segment.arrivalName.ifBlank { fallbackDestination })
                     drawTransportLeg(segment.type, start, end)
-                    addPoint(start, transportInternal = true, flight = segment.type == TransportType.FLIGHT)
+                    addPoint(start, transportInternal = true)
                     addPoint(end, transportInternal = false)
                 }
                 photosBySegment[segment.id]?.sortedBy { it.takenAt ?: Long.MAX_VALUE }?.forEach { photo ->
@@ -170,7 +171,7 @@ class TripMapRenderer(
             }
 
             drawYellowConnectors(orderedPoints, skipNextYellow)
-            startRoutePulse(orderedPoints, flightLeg)
+            startRoutePulse(orderedPoints, skipNextYellow)
             renderPhotoGroups(groups)
             groups.forEach { cameraPoints.add(it.center) }
 
@@ -187,17 +188,18 @@ class TripMapRenderer(
         val isFlight = type == TransportType.FLIGHT
         val sLng = start.longitude
         val eLng = unwrapLng(sLng, end.longitude)
-        val cLat = (start.latitude + end.latitude) / 2.0 + -(eLng - sLng) * ARC_LIFT
-        val cLng = (sLng + eLng) / 2.0 + (end.latitude - start.latitude) * ARC_LIFT
+        // Every mode now curves: flights bow a lot, ground modes only slightly. The control point is
+        // mirrored for the reverse direction, so an out-and-back trip's two lines bow to opposite
+        // sides and no longer sit on top of each other.
+        val lift = if (isFlight) ARC_LIFT else GROUND_ARC_LIFT
+        val cLat = (start.latitude + end.latitude) / 2.0 + -(eLng - sLng) * lift
+        val cLng = (sLng + eLng) / 2.0 + (end.latitude - start.latitude) * lift
 
-        val path = if (isFlight) {
-            (0..ARC_STEPS).map { step ->
-                bezier(start.latitude, sLng, cLat, cLng, end.latitude, eLng, step.toFloat() / ARC_STEPS)
-            }
-        } else {
-            listOf(start, LatLng(end.latitude, eLng))
+        val path = (0..ARC_STEPS).map { step ->
+            bezier(start.latitude, sLng, cLat, cLng, end.latitude, eLng, step.toFloat() / ARC_STEPS)
         }
 
+        // All modes are dashed for a consistent "in transit" look.
         val options = PolylineOptions()
             .addAll(path)
             .color(color)
@@ -205,9 +207,7 @@ class TripMapRenderer(
             .startCap(RoundCap())
             .endCap(RoundCap())
             .jointType(JointType.ROUND)
-        if (isFlight) {
-            options.pattern(listOf(Dash(dpf(10f)), Gap(dpf(7f))))
-        }
+            .pattern(listOf(Dash(dpf(10f)), Gap(dpf(7f))))
         map.addPolyline(options)?.let { polylineInfos.add(PolyInfo(it, dpf(2.6f))) }
 
         addDot(start, color)
@@ -222,19 +222,25 @@ class TripMapRenderer(
         ) ?: return
         scalables.add(Scalable(mover, transportIconBase(type, color)))
 
-        val duration = travelDuration(haversine(start.latitude, sLng, end.latitude, eLng))
+        val legMeters = haversine(start.latitude, sLng, end.latitude, eLng)
+        val midLat = (start.latitude + end.latitude) / 2.0
+        var progress = 0.0
+        var lastFrameNanos = 0L
         val animator = ValueAnimator.ofFloat(0f, 1f).apply {
-            this.duration = duration
+            duration = 1000L // used only as a per-frame ticker; movement is time + zoom based
             repeatCount = ValueAnimator.INFINITE
             repeatMode = ValueAnimator.RESTART
             interpolator = LinearInterpolator()
-            addUpdateListener { va ->
-                val t = va.animatedValue as Float
-                val point = if (isFlight) {
-                    bezier(start.latitude, sLng, cLat, cLng, end.latitude, eLng, t)
-                } else {
-                    LatLng(start.latitude + (end.latitude - start.latitude) * t, sLng + (eLng - sLng) * t)
+            addUpdateListener {
+                val now = System.nanoTime()
+                if (lastFrameNanos == 0L) {
+                    lastFrameNanos = now
+                    return@addUpdateListener
                 }
+                val dt = ((now - lastFrameNanos) / 1_000_000_000.0).coerceIn(0.0, 0.1)
+                lastFrameNanos = now
+                progress = nextLegProgress(progress, dt, legMeters, midLat)
+                val point = bezier(start.latitude, sLng, cLat, cLng, end.latitude, eLng, progress.toFloat())
                 runCatching { mover.position = point }
             }
             start()
@@ -253,7 +259,7 @@ class TripMapRenderer(
     }
 
     private fun addHotelMarker(point: LatLng) {
-        val base = hotelBase(0xFFC084FC.toInt())
+        val base = hotelBase(ACCOMMODATION_GREEN)
         map.addMarker(
             MarkerOptions()
                 .position(point)
@@ -280,7 +286,24 @@ class TripMapRenderer(
         }
     }
 
-    private fun startRoutePulse(points: List<LatLng>, flightLeg: List<Boolean>) {
+    private fun startRoutePulse(points: List<LatLng>, skipNext: List<Boolean>) {
+        if (points.size < 2) return
+        // The yellow route is broken wherever a transport leg sits (skipNext == true). Give each
+        // contiguous yellow run its own looping pulse, so the visiting order reads per cluster and the
+        // light never jumps across a transport leg.
+        var runStart = 0
+        for (i in points.indices) {
+            val breaksAfter = i == points.size - 1 || skipNext[i]
+            if (breaksAfter) {
+                if (i - runStart >= 1) {
+                    startPulseForRun(points.subList(runStart, i + 1).toList())
+                }
+                runStart = i + 1
+            }
+        }
+    }
+
+    private fun startPulseForRun(points: List<LatLng>) {
         if (points.size < 2) return
         // Build a continuous, unwrapped path so the pulse moves smoothly across the antimeridian.
         val latArr = DoubleArray(points.size)
@@ -291,16 +314,9 @@ class TripMapRenderer(
             latArr[i] = points[i].latitude
             lngArr[i] = unwrapLng(lngArr[i - 1], points[i].longitude)
         }
-        // Flight legs contribute zero length so the pulse skips straight across them instead of
-        // tracing the flight arc; the moving plane icon already conveys the flight itself.
         val cum = DoubleArray(points.size)
         for (i in 1 until points.size) {
-            val legLength = if (flightLeg.getOrElse(i - 1) { false }) {
-                0.0
-            } else {
-                haversine(latArr[i - 1], lngArr[i - 1], latArr[i], lngArr[i])
-            }
-            cum[i] = cum[i - 1] + legLength
+            cum[i] = cum[i - 1] + haversine(latArr[i - 1], lngArr[i - 1], latArr[i], lngArr[i])
         }
         val total = cum.last()
         if (total <= 0.0) return
@@ -702,10 +718,10 @@ class TripMapRenderer(
         if (arrivalLat != null && arrivalLng != null) LatLng(arrivalLat, arrivalLng) else null
 
     private fun TransportType.routeColor(): Int = when (this) {
-        TransportType.FLIGHT -> 0xFF7DD3FC.toInt()
-        TransportType.TRAIN -> 0xFF66BB6A.toInt()
-        TransportType.CAR -> 0xFF42A5F5.toInt()
-        TransportType.ACCOMMODATION -> 0xFFC084FC.toInt()
+        TransportType.FLIGHT -> 0xFF7DD3FC.toInt() // sky blue
+        TransportType.TRAIN -> 0xFFEF5350.toInt() // red
+        TransportType.CAR -> 0xFFFFA726.toInt() // orange
+        TransportType.ACCOMMODATION -> ACCOMMODATION_GREEN
     }
 
     private fun midpoint(a: LatLng, b: LatLng): LatLng =
@@ -739,8 +755,20 @@ class TripMapRenderer(
         return sqrt(x * x + dLat * dLat) * 6_371_000.0
     }
 
-    private fun travelDuration(distanceMeters: Double): Long =
-        (distanceMeters / 1000.0 * 22.0).toLong().coerceIn(3500L, 9000L)
+    /**
+     * Advances [progress] (0..1 along a leg) so the moving icon keeps a roughly constant *on-screen*
+     * speed regardless of zoom. Zooming in makes the leg span more pixels, so each step gets smaller
+     * and the icon no longer races across the screen.
+     */
+    private fun nextLegProgress(progress: Double, dtSec: Double, legMeters: Double, midLat: Double): Double {
+        val zoom = map.cameraPosition.zoom
+        val metersPerPixel = 156543.03392 * cos(Math.toRadians(midLat)) / 2.0.pow(zoom.toDouble())
+        val legPixels = (legMeters / metersPerPixel).coerceAtLeast(1.0)
+        val advance = (TARGET_MOVER_DP_PER_SEC * density * dtSec) / legPixels
+        var next = progress + advance
+        if (next >= 1.0) next -= floor(next)
+        return next
+    }
 
     private fun dp(value: Float): Int = (value * density).toInt()
 
@@ -758,8 +786,12 @@ class TripMapRenderer(
     companion object {
         private const val ARC_STEPS = 64
         private const val ARC_LIFT = 0.16
+        private const val GROUND_ARC_LIFT = 0.06 // gentle bow for train/car so round trips don't overlap
         private const val GROUP_THRESHOLD_M = 350.0
         private const val PHOTO_PX = 300
         private val ROUTE_YELLOW = 0xFFFFD166.toInt()
+        private val ACCOMMODATION_GREEN = 0xFFA5D6A7.toInt() // light green lodging marker
+        private const val TARGET_MOVER_DP_PER_SEC = 15f // on-screen speed of the moving transport icon
+
     }
 }

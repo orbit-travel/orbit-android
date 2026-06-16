@@ -1,5 +1,6 @@
 package com.pnu.orbit.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -29,4 +30,7 @@ data class PhotoEntity(
     val locationName: String?,
     val comment: String?,
     val tag: String?,
+    /** true = fill the polaroid window (centre-crop); false = fit whole photo with black bars. */
+    @ColumnInfo(defaultValue = "1")
+    val cropToFill: Boolean = true,
 )

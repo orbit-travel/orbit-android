@@ -25,7 +25,7 @@ import com.pnu.orbit.data.local.entity.TripEntity
         PlanEntity::class,
         SavedTravelPlanEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class OrbitDatabase : RoomDatabase() {
@@ -72,6 +72,14 @@ abstract class OrbitDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_4_5 = object : Migration(4, 5) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `photos` ADD COLUMN `cropToFill` INTEGER NOT NULL DEFAULT 1",
+                )
+            }
+        }
+
         @Volatile
         private var instance: OrbitDatabase? = null
 
@@ -81,7 +89,7 @@ abstract class OrbitDatabase : RoomDatabase() {
                     context.applicationContext,
                     OrbitDatabase::class.java,
                     "orbit.db",
-                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                ).addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_4_5)
                     .fallbackToDestructiveMigration()
                     .build()
                     .also { instance = it }

@@ -171,6 +171,9 @@ class TripTimelineAdapter(
         private val adapter = PolaroidPhotoAdapter(
             onPhotoChanged = callbacks::onPhotoChanged,
             onPhotoLocationRequested = callbacks::onPhotoLocationRequested,
+            onPhotoReplaceRequested = callbacks::onPhotoReplaceRequested,
+            onPhotoDeleteRequested = callbacks::onPhotoDeleteRequested,
+            onUsePreviousLocationRequested = callbacks::onUsePreviousLocationRequested,
         )
 
         init {
@@ -192,6 +195,9 @@ class TripTimelineAdapter(
         fun onTransportEndpointRequested(segment: TransportSegmentDraft, isDeparture: Boolean)
         fun onPhotoChanged(photo: PhotoDraft)
         fun onPhotoLocationRequested(photo: PhotoDraft)
+        fun onPhotoReplaceRequested(photo: PhotoDraft)
+        fun onPhotoDeleteRequested(photo: PhotoDraft)
+        fun onUsePreviousLocationRequested(photo: PhotoDraft)
         fun onTimelineItemDeleted(itemId: Long)
     }
 

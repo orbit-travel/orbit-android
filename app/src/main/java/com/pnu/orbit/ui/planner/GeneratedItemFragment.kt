@@ -30,6 +30,7 @@ import com.google.android.gms.maps.model.PolylineOptions
 import com.pnu.orbit.BuildConfig
 import com.pnu.orbit.R
 import com.pnu.orbit.domain.model.TravelPlan
+import com.pnu.orbit.map.LabeledMarkerFactory
 import com.pnu.orbit.map.PlaceCoordinateResolver
 import com.pnu.orbit.domain.model.TimeType
 import com.pnu.orbit.ui.common.UiState
@@ -200,20 +201,33 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
 
         if (points.isEmpty()) return
 
-        // Draw markers with custom category pictograms and color tinting
+        // Draw labelled markers (category pictogram + place name) so each stop is readable at a
+        // glance without tapping it.
+        val ctx = context
         dayPlan.attractions.forEachIndexed { index, attr ->
             val latLng = points[index]
             val category = determineCategory(attr.name, attr.description)
             val details = getCategoryDetails(category)
-            val markerIcon = getBitmapDescriptorFromVector(details.first, details.second)
-            
+
             val markerOptions = MarkerOptions()
                 .position(latLng)
                 .title("${attr.sequence}. ${attr.name}")
                 .snippet(attr.description)
 
-            if (markerIcon != null) {
-                markerOptions.icon(markerIcon)
+            if (ctx != null) {
+                markerOptions
+                    .icon(
+                        LabeledMarkerFactory.create(
+                            context = ctx,
+                            label = "${attr.sequence}. ${attr.name}",
+                            accentColor = details.second,
+                            iconRes = details.first,
+                        ),
+                    )
+                    .anchor(LabeledMarkerFactory.ANCHOR_U, LabeledMarkerFactory.ANCHOR_V)
+                    .zIndex((dayPlan.attractions.size - index).toFloat())
+            } else {
+                getBitmapDescriptorFromVector(details.first, details.second)?.let { markerOptions.icon(it) }
             }
             map.addMarker(markerOptions)
         }

@@ -43,6 +43,7 @@ import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRe
 import com.google.android.libraries.places.api.net.PlacesClient
 import com.pnu.orbit.BuildConfig
 import com.pnu.orbit.R
+import com.pnu.orbit.map.LabeledMarkerFactory
 
 class PlaceSearchActivity : AppCompatActivity(), OnMapReadyCallback {
     private val searchHandler = Handler(Looper.getMainLooper())
@@ -405,15 +406,21 @@ class PlaceSearchActivity : AppCompatActivity(), OnMapReadyCallback {
         map.clear()
         if (items.isEmpty()) return
 
-        items.forEach { item ->
-            val marker = map.addMarker(
-                MarkerOptions()
-                    .position(item.latLng)
-                    .title(item.name)
-                    .snippet(item.address)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)),
-            )
-            marker?.tag = item
+        items.forEachIndexed { index, item ->
+            val options = MarkerOptions()
+                .position(item.latLng)
+                .title(item.name)
+                .snippet(item.address)
+            if (index < LABELED_MARKER_LIMIT) {
+                // Top results show their name beside the pin so users don't have to tap each one.
+                options
+                    .icon(LabeledMarkerFactory.create(this, item.name, MARKER_ACCENT))
+                    .anchor(LabeledMarkerFactory.ANCHOR_U, LabeledMarkerFactory.ANCHOR_V)
+                    .zIndex((LABELED_MARKER_LIMIT - index).toFloat())
+            } else {
+                options.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
+            }
+            map.addMarker(options)?.tag = item
         }
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(items.first().latLng, RESULT_ZOOM))
     }
@@ -476,6 +483,8 @@ class PlaceSearchActivity : AppCompatActivity(), OnMapReadyCallback {
 
         private const val MIN_QUERY_LENGTH = 2
         private const val MAX_RESULTS = 8
+        private const val LABELED_MARKER_LIMIT = 5
+        private val MARKER_ACCENT = 0xFFEA4335.toInt()
         private const val SEARCH_DELAY_MS = 300L
         private const val STATE_LOCATION_PERMISSION_REQUESTED = "state_location_permission_requested"
         private const val INITIAL_ZOOM = 4.45f

@@ -30,6 +30,7 @@ data class PhotoDraft(
     val locationName: String?,
     val comment: String = "",
     val tag: PhotoTag = PhotoTag.UNKNOWN,
+    val cropToFill: Boolean = true,
 )
 
 data class PhotoBlockDraft(

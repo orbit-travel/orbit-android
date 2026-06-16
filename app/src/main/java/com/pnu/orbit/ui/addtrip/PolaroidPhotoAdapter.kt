@@ -17,6 +17,9 @@ import java.util.Locale
 class PolaroidPhotoAdapter(
     private val onPhotoChanged: (PhotoDraft) -> Unit,
     private val onPhotoLocationRequested: (PhotoDraft) -> Unit,
+    private val onPhotoReplaceRequested: (PhotoDraft) -> Unit,
+    private val onPhotoDeleteRequested: (PhotoDraft) -> Unit,
+    private val onUsePreviousLocationRequested: (PhotoDraft) -> Unit,
 ) : RecyclerView.Adapter<PolaroidPhotoAdapter.ViewHolder>() {
     private val photos = mutableListOf<PhotoDraft>()
     private var recyclerView: RecyclerView? = null
@@ -47,7 +50,14 @@ class PolaroidPhotoAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_polaroid_photo, parent, false)
-        return ViewHolder(view, onPhotoChanged, onPhotoLocationRequested)
+        return ViewHolder(
+            view,
+            onPhotoChanged,
+            onPhotoLocationRequested,
+            onPhotoReplaceRequested,
+            onPhotoDeleteRequested,
+            onUsePreviousLocationRequested,
+        )
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -80,18 +90,28 @@ class PolaroidPhotoAdapter(
         itemView: View,
         private val onPhotoChanged: (PhotoDraft) -> Unit,
         private val onPhotoLocationRequested: (PhotoDraft) -> Unit,
+        private val onPhotoReplaceRequested: (PhotoDraft) -> Unit,
+        private val onPhotoDeleteRequested: (PhotoDraft) -> Unit,
+        private val onUsePreviousLocationRequested: (PhotoDraft) -> Unit,
     ) : RecyclerView.ViewHolder(itemView) {
         private val image: ImageView = itemView.findViewById(R.id.polaroidImage)
         private val comment: EditText = itemView.findViewById(R.id.inputPhotoComment)
         private val takenTime: TextView = itemView.findViewById(R.id.photoTakenTimeText)
         private val location: TextView = itemView.findViewById(R.id.photoLocationText)
         private val locationButton: Button = itemView.findViewById(R.id.buttonSelectPhotoLocation)
+        private val usePreviousLocationButton: Button = itemView.findViewById(R.id.buttonUsePreviousLocation)
+        private val changeButton: Button = itemView.findViewById(R.id.buttonChangePhoto)
+        private val deleteButton: Button = itemView.findViewById(R.id.buttonDeletePhoto)
+
+        /** The currently-bound photo, kept fresh so comment commits use the latest draft state. */
+        private var boundPhoto: PhotoDraft? = null
 
         fun bind(photo: PhotoDraft) {
-            Glide.with(image)
-                .load(photo.uri)
-                .fitCenter()
-                .into(image)
+            boundPhoto = photo
+            loadImage(photo)
+            // Tapping the photo toggles fill (centre-crop) vs fit (whole photo, black bars). No extra
+            // button, per the polaroid concept.
+            image.setOnClickListener { toggleCropMode() }
 
             bindComment(photo)
             takenTime.text = photo.takenAt?.let {
@@ -104,7 +124,23 @@ class PolaroidPhotoAdapter(
             } else {
                 itemView.context.getString(R.string.photo_location_unknown)
             }
-            locationButton.setOnClickListener { onPhotoLocationRequested(photo) }
+            // Commit any in-progress note before launching another screen / mutating the list so the
+            // typed text is never dropped by the rebind that follows the structural change.
+            locationButton.setOnClickListener {
+                commitComment()
+                boundPhoto?.let(onPhotoLocationRequested)
+            }
+            usePreviousLocationButton.setOnClickListener {
+                commitComment()
+                boundPhoto?.let(onUsePreviousLocationRequested)
+            }
+            changeButton.setOnClickListener {
+                commitComment()
+                boundPhoto?.let(onPhotoReplaceRequested)
+            }
+            deleteButton.setOnClickListener {
+                boundPhoto?.let(onPhotoDeleteRequested)
+            }
         }
 
         private fun bindComment(photo: PhotoDraft) {
@@ -113,14 +149,44 @@ class PolaroidPhotoAdapter(
                 comment.setText(photo.comment)
             }
             comment.setOnFocusChangeListener { _, hasFocus ->
-                if (!hasFocus) {
-                    val updatedComment = comment.text.toString()
-                    if (updatedComment != photo.comment) {
-                        itemView.post {
-                            onPhotoChanged(photo.copy(comment = updatedComment))
-                        }
-                    }
-                }
+                // Focus can be lost while the list is rebinding (view recycling); defer the commit so
+                // we never mutate the timeline re-entrantly during a layout pass.
+                if (!hasFocus) itemView.post { commitComment() }
+            }
+        }
+
+        private fun loadImage(photo: PhotoDraft) {
+            image.scaleType = if (photo.cropToFill) {
+                ImageView.ScaleType.CENTER_CROP
+            } else {
+                ImageView.ScaleType.FIT_CENTER
+            }
+            val request = Glide.with(image).load(photo.uri)
+            if (photo.cropToFill) request.centerCrop() else request.fitCenter()
+            request.into(image)
+        }
+
+        /** Flips fill <-> fit for this photo, keeping any in-progress note. */
+        private fun toggleCropMode() {
+            val photo = boundPhoto ?: return
+            val updatedComment = comment.text.toString()
+            val toggled = photo.copy(
+                comment = if (updatedComment != photo.comment) updatedComment else photo.comment,
+                cropToFill = !photo.cropToFill,
+            )
+            boundPhoto = toggled
+            loadImage(toggled) // immediate visual feedback before the list rebind
+            onPhotoChanged(toggled)
+        }
+
+        /** Pushes the EditText content into the draft immediately (synchronously). */
+        private fun commitComment() {
+            val photo = boundPhoto ?: return
+            val updatedComment = comment.text.toString()
+            if (updatedComment != photo.comment) {
+                val updated = photo.copy(comment = updatedComment)
+                boundPhoto = updated
+                onPhotoChanged(updated)
             }
         }
 

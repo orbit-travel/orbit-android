@@ -138,6 +138,79 @@ class AddTripViewModel(
         }
     }
 
+    /** Removes a single photo from its block, keeping the other photos and their notes. */
+    fun deletePhoto(photoDraftId: Long) {
+        _timeline.value = _timeline.value.orEmpty().mapNotNull { item ->
+            if (item is PhotoTimelineDraft && item.photoBlock.photos.any { it.draftId == photoDraftId }) {
+                val remaining = item.photoBlock.photos.filterNot { it.draftId == photoDraftId }
+                if (remaining.isEmpty()) {
+                    null // drop an emptied block
+                } else {
+                    item.copy(photoBlock = item.photoBlock.copy(photos = remaining))
+                }
+            } else {
+                item
+            }
+        }
+    }
+
+    /**
+     * Swaps the image behind a single photo for [uri], re-reading its metadata/tag while keeping the
+     * user's note. A manually picked location is preserved when the new image carries no GPS data.
+     */
+    fun replacePhoto(photoDraftId: Long, uri: Uri) {
+        val existing = _timeline.value.orEmpty()
+            .filterIsInstance<PhotoTimelineDraft>()
+            .flatMap { it.photoBlock.photos }
+            .firstOrNull { it.draftId == photoDraftId }
+            ?: return
+
+        viewModelScope.launch {
+            val replacement = withContext(Dispatchers.IO) {
+                val draft = metadataReader.read(uri, fallbackOrder = 0)
+                draft.copy(tag = classifier.classify(uri))
+            }
+            val keepOldLocation = replacement.lat == null || replacement.lng == null
+            updatePhoto(
+                existing.copy(
+                    uri = uri,
+                    takenAt = replacement.takenAt,
+                    lat = if (keepOldLocation) existing.lat else replacement.lat,
+                    lng = if (keepOldLocation) existing.lng else replacement.lng,
+                    locationName = if (keepOldLocation) existing.locationName else replacement.locationName,
+                    tag = replacement.tag,
+                    // comment intentionally preserved
+                ),
+            )
+        }
+    }
+
+    /**
+     * Copies the location of the nearest earlier photo (within the same block) onto the photo with
+     * [photoDraftId], so a run of shots taken at one spot doesn't need per-photo location picking.
+     * Returns false if there is no earlier photo with a location to copy.
+     */
+    fun usePreviousLocation(photoDraftId: Long): Boolean {
+        val block = _timeline.value.orEmpty()
+            .filterIsInstance<PhotoTimelineDraft>()
+            .firstOrNull { b -> b.photoBlock.photos.any { it.draftId == photoDraftId } }
+            ?: return false
+        val photos = block.photoBlock.photos
+        val index = photos.indexOfFirst { it.draftId == photoDraftId }
+        if (index <= 0) return false
+        val previous = photos.subList(0, index)
+            .lastOrNull { it.lat != null && it.lng != null }
+            ?: return false
+        updatePhoto(
+            photos[index].copy(
+                lat = previous.lat,
+                lng = previous.lng,
+                locationName = previous.locationName,
+            ),
+        )
+        return true
+    }
+
     fun deleteTimelineItem(itemId: Long) {
         val current = _timeline.value.orEmpty()
         val item = current.firstOrNull { it.draftId == itemId } ?: return
@@ -227,6 +300,7 @@ class AddTripViewModel(
         locationName = locationName,
         comment = comment.orEmpty(),
         tag = tag,
+        cropToFill = cropToFill,
     )
 
     fun saveTrip(title: String) {
@@ -343,6 +417,7 @@ class AddTripViewModel(
                                 locationName = draft.locationName,
                                 comment = draft.comment.ifBlank { null },
                                 tag = draft.tag,
+                                cropToFill = draft.cropToFill,
                             ),
                         )
                     }

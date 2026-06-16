@@ -11,6 +11,7 @@ data class TravelPhoto(
     val locationName: String?,
     val comment: String?,
     val tag: PhotoTag,
+    val cropToFill: Boolean = true,
 ) {
     val hasLocation: Boolean = lat != null && lng != null
 }
@@ -24,6 +25,7 @@ data class NewTravelPhoto(
     val locationName: String?,
     val comment: String?,
     val tag: PhotoTag,
+    val cropToFill: Boolean = true,
 )
 
 enum class PhotoTag {

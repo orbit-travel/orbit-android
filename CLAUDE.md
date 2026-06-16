@@ -25,18 +25,18 @@ There is no separate ktlint/detekt; `lint` is the only static check wired up.
 
 ## API keys
 
-Keys live in root `local.properties` (git-ignored, never commit). `app/build.gradle.kts` reads `MAPS_API_KEY` (and optional `PLACES_API_KEY`, defaulting to the maps key) and exposes them as:
+Keys live in root `local.properties` (git-ignored, never commit). `app/build.gradle.kts` reads `MAPS_API_KEY`, optional `PLACES_API_KEY` (defaults to the maps key), and `GEMINI_API_KEY`, and exposes them as:
 - manifest placeholder `${MAPS_API_KEY}` (Google Maps `meta-data`)
-- `BuildConfig.MAPS_API_KEY` / `BuildConfig.PLACES_API_KEY`
+- `BuildConfig.MAPS_API_KEY` / `BuildConfig.PLACES_API_KEY` / `BuildConfig.GEMINI_API_KEY`
 
-A missing key must degrade gracefully (fallback UI / demo data), never crash. See `docs/maps-and-3d-assets.md` for the Google Cloud key-restriction checklist.
+A missing key must degrade gracefully (fallback UI / demo data), never crash — e.g. `GeminiPlannerApi` throws on a blank key so the planner can surface an error/fallback instead of calling the API. See `docs/maps-and-3d-assets.md` for the Google Cloud key-restriction checklist.
 
 ## Architecture
 
 MVVM + Repository, with **manual dependency injection** — there is no Hilt/Dagger.
 
 - **`RepositoryProvider`** (object) is the single composition root. Activities/Fragments/ViewModels obtain repositories through it; it wires DAOs from `OrbitDatabase.getInstance()` and APIs from `RetrofitClient`. Add new repository factories here rather than constructing DAOs/APIs directly in UI code.
-- **Layering rule (from AGENT.md, enforced in practice):** Activities/Fragments never touch Room DAOs or Retrofit directly. UI → ViewModel → Repository (interface) → DAO/API. Repositories expose `domain.model` types; `data.mapper` converts between Room entities / Retrofit DTOs and domain models.
+- **Layering rule (from AGENT.md):** UI → ViewModel → Repository (interface) → DAO/API. Repositories expose `domain.model` types; `data.mapper` converts between Room entities / Retrofit DTOs and domain models. This is the target, but note it isn't fully enforced today — `TravelPlannerViewModel` reaches into `OrbitDatabase.getInstance(...).planDao()` directly. Prefer routing new data access through a repository rather than copying that shortcut.
 - **Repository interfaces vs. impls:** each repository is an interface (`TripRepository`, `PlannerRepository`, `EarthRepository`) with a `Local*`/`Dummy*` implementation. This boundary exists so local/dummy sources can later be swapped for a backend — preserve it.
 - **UI state** is the sealed `UiState<T>` (`Loading` / `Empty` / `Success` / `Error`). User-facing async flows should drive this through a ViewModel + LiveData; do not skip the Empty/Error cases (stability is a graded item).
 - **Coroutines** handle all async (Room, Retrofit, photo/metadata work).
@@ -47,12 +47,19 @@ Manifest registers four activities: `SplashActivity` (launcher) → `MainActivit
 
 ### Persistence specifics
 
-- **Room DB** (`OrbitDatabase`, name `orbit.db`) is a hand-built singleton at **version 3** with `exportSchema = true` (schemas in `app/schemas/`). Migrations are written manually (`MIGRATION_1_2`, `MIGRATION_2_3`). **Any entity/schema change requires bumping the version AND adding a `Migration`** registered in `addMigrations(...)` — there is no `fallbackToDestructiveMigration`. Entities: `TripEntity`, `TransportSegmentEntity`, `PhotoEntity`, `PlanEntity`.
+- **Room DB** (`OrbitDatabase`, name `orbit.db`) is a hand-built singleton at **version 4** with `exportSchema = true` (schemas in `app/schemas/`). Entities: `TripEntity`, `TransportSegmentEntity`, `PhotoEntity`, `PlanEntity`, `SavedTravelPlanEntity`. Two manual migrations exist (`MIGRATION_1_2`, `MIGRATION_2_3`), but the builder also calls **`.fallbackToDestructiveMigration()`** — so there is currently **no `MIGRATION_3_4`** and a v3→v4 upgrade wipes local data. When changing the schema, bump the version and add a real `Migration` registered in `addMigrations(...)`; don't rely on the destructive fallback for data you want to keep.
 - **`PhotoFileStore`** copies photos chosen via the system photo picker into app-private `filesDir/trip_photos` and stores `file://` URIs, because picker URI grants are temporary. Persisting must run off the main thread.
+- **A trip is modeled as a sequence of `TransportSegment`s** (departure/arrival names + optional lat/lng, ordered by `sortOrder`), and each photo can attach to a segment (`segmentId`). `LocalTripRepository.addTrip/updateTrip` insert segments first, then map photos onto the generated segment ids. Update is delete-then-reinsert of a trip's segments and photos.
+
+### Maps & geocoding (`map/` package)
+
+`map/` is independent of the 3D Earth: `PlaceCoordinateResolver` resolves place names to coordinates (Places SDK, with `data/local/asset/AirportDataSource` providing offline airport coordinates as a fallback), `RoutePreviewBuilder` builds route previews, and `TripMapRenderer` draws markers/polylines on the Google map. Keep geocoding/network here off the main thread and degrading gracefully when a key or result is missing.
 
 ### Network & demo fallbacks
 
-`RetrofitClient` currently points at a placeholder base URL (`https://example.com/`), so live calls are expected to fail in the term-project build. `LocalPlannerRepository.createPlan` wraps the API call in `runCatching` and falls back to `util/DemoFallbacks` (sample plan) on any failure. This fallback-on-failure pattern is deliberate (demo must not crash) — keep it when adding network features, and route sample/fallback content through `DemoFallbacks`.
+`RetrofitClient` builds **two** Retrofit instances: a placeholder one at `https://example.com/` (backs `AiPlannerApi`/`WeatherApi`, expected to fail in the term-project build) and a real one at `https://generativelanguage.googleapis.com/` for `geminiApi`. The live planner path is **Gemini**: `RepositoryProvider` wraps `geminiApi` + `BuildConfig.GEMINI_API_KEY` in `GeminiPlannerApi` (which implements `AiPlannerApi`) and injects it into `LocalPlannerRepository`. `GeminiPlannerApi` builds the prompt, calls `generateContent`, strips ```` ```json ```` fences, and parses the JSON; a shared `Mutex` serializes calls and `RetrofitClient`'s `RateLimitRetryInterceptor` retries HTTP 429 with backoff.
+
+Failures (blank key, network error, malformed JSON) propagate as exceptions; the **ViewModel** (`TravelPlannerViewModel`) catches them and drives `UiState.Error`/fallback rather than `LocalPlannerRepository.createPlan` swallowing them. Sample/fallback content lives in `util/DemoFallbacks` (and the VM cleans up persisted fallback plans). Keep this no-crash-on-failure behavior when adding network features, and route sample/fallback content through `DemoFallbacks`.
 
 ### ML
 
@@ -64,7 +71,7 @@ Manifest registers four activities: `SplashActivity` (launcher) → `MainActivit
 
 ## Conventions
 
-- Package root `com.pnu.orbit`; structure follows `data/{local,remote,repository,mapper}`, `domain/model`, `ui/<feature>`, `map`, `ml`, `util`.
+- Package root `com.pnu.orbit`; structure follows `data/{local{db,dao,entity,asset},remote{api,dto,client},repository,mapper}`, `domain/model`, `ui/<feature>` (`splash`, `main`, `record`, `addtrip`, `planner`, `common`), `map`, `ml`, `util`.
 - Commit prefixes (from AGENT.md): `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `ui:`, `test:`.
 - Branches: `main` (submission), `develop` (integration), `feature/*`.
 - Keep real local user data strictly separated from dummy social-Earth data; do not add backend/login/cloud/social-server code unless explicitly told to (see AGENT.md §16 scope guardrails).

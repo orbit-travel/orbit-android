@@ -65,6 +65,11 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     private lateinit var photoDetailComment: TextView
     private lateinit var photoDetailDate: TextView
     private lateinit var photoDetailPlace: TextView
+    private lateinit var fullPhotoOverlay: View
+    private lateinit var fullPhotoImage: ImageView
+    private var detailPhoto: TravelPhoto? = null
+    private var mapStageOpen = false
+    private lateinit var backCallback: androidx.activity.OnBackPressedCallback
     private var googleMap: GoogleMap? = null
     private var tripMapRenderer: TripMapRenderer? = null
     private var selectedTripId: Long? = null
@@ -122,7 +127,22 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         photoDetailComment = view.findViewById(R.id.photoDetailComment)
         photoDetailDate = view.findViewById(R.id.photoDetailDate)
         photoDetailPlace = view.findViewById(R.id.photoDetailPlace)
+        fullPhotoOverlay = view.findViewById(R.id.fullPhotoOverlay)
+        fullPhotoImage = view.findViewById(R.id.fullPhotoImage)
         photoDetailOverlay.setOnClickListener { hidePhotoDetail() }
+        photoDetailImage.setOnClickListener { detailPhoto?.let(::showFullPhoto) }
+        fullPhotoOverlay.setOnClickListener { hideFullPhoto() }
+
+        backCallback = object : androidx.activity.OnBackPressedCallback(false) {
+            override fun handleOnBackPressed() {
+                when {
+                    fullPhotoOverlay.visibility == View.VISIBLE -> hideFullPhoto()
+                    photoDetailOverlay.visibility == View.VISIBLE -> hidePhotoDetail()
+                    mapPanel.visibility == View.VISIBLE -> showEarthStage()
+                }
+            }
+        }
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
         adapter = TripPreviewAdapter(
             onTripClick = { trip -> onTripSelected(trip) },
             onEditClick = { trip -> launchEdit(trip) },
@@ -313,6 +333,9 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
             .translationY(0f)
             .setDuration(240L)
             .start()
+
+        mapStageOpen = true
+        updateBackCallback()
     }
 
     private fun toggleTripList() {
@@ -502,7 +525,17 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun showPhotoDetail(photo: TravelPhoto) {
-        Glide.with(this).load(Uri.parse(photo.uri)).fitCenter().into(photoDetailImage)
+        detailPhoto = photo
+        // Honour the per-photo framing chosen in the editor; tap the photo again for the full image.
+        photoDetailImage.scaleType = if (photo.cropToFill) {
+            ImageView.ScaleType.CENTER_CROP
+        } else {
+            ImageView.ScaleType.FIT_CENTER
+        }
+        val request = Glide.with(this).load(Uri.parse(photo.uri))
+        if (photo.cropToFill) request.centerCrop() else request.fitCenter()
+        request.into(photoDetailImage)
+
         photoDetailComment.text = photo.comment?.takeIf { it.isNotBlank() }.orEmpty()
         photoDetailComment.visibility = if (photoDetailComment.text.isNullOrBlank()) View.GONE else View.VISIBLE
         photoDetailDate.text = photo.takenAt?.let {
@@ -515,15 +548,82 @@ class TravelRecordFragment : Fragment(), OnMapReadyCallback {
         photoDetailOverlay.alpha = 0f
         photoDetailOverlay.visibility = View.VISIBLE
         photoDetailOverlay.animate().alpha(1f).setDuration(180L).start()
+        updateBackCallback()
     }
 
     private fun hidePhotoDetail() {
-        if (photoDetailOverlay.visibility != View.VISIBLE) return
+        hideFullPhoto()
+        if (photoDetailOverlay.visibility != View.VISIBLE) {
+            updateBackCallback()
+            return
+        }
         photoDetailOverlay.animate()
             .alpha(0f)
             .setDuration(150L)
-            .withEndAction { photoDetailOverlay.visibility = View.GONE }
+            .withEndAction {
+                photoDetailOverlay.visibility = View.GONE
+                updateBackCallback()
+            }
             .start()
+    }
+
+    private fun showFullPhoto(photo: TravelPhoto) {
+        // Always show the whole photo, uncropped, regardless of the polaroid framing.
+        Glide.with(this).load(Uri.parse(photo.uri)).fitCenter().into(fullPhotoImage)
+        fullPhotoOverlay.alpha = 0f
+        fullPhotoOverlay.visibility = View.VISIBLE
+        fullPhotoOverlay.animate().alpha(1f).setDuration(160L).start()
+        updateBackCallback()
+    }
+
+    private fun hideFullPhoto() {
+        if (fullPhotoOverlay.visibility != View.VISIBLE) return
+        fullPhotoOverlay.animate()
+            .alpha(0f)
+            .setDuration(140L)
+            .withEndAction {
+                fullPhotoOverlay.visibility = View.GONE
+                updateBackCallback()
+            }
+            .start()
+    }
+
+    /** Collapses the map back to the three-globe hub instead of letting back exit the app. */
+    private fun showEarthStage() {
+        hidePhotoDetail()
+        mapStageOpen = false
+        selectedTripId = null
+        pendingTrip = null
+        tripMapRenderer?.clear()
+
+        mapPanel.animate()
+            .alpha(0f)
+            .setDuration(220L)
+            .withEndAction { mapPanel.visibility = View.GONE }
+            .start()
+        recordActions.visibility = View.GONE
+        tripRecyclerView.visibility = View.GONE
+        toggleTripsButton.setText(R.string.travel_list)
+
+        earthStage.visibility = View.VISIBLE
+        earthStage.alpha = 0f
+        earthStage.scaleX = 1.03f
+        earthStage.scaleY = 1.03f
+        earthStage.animate()
+            .alpha(1f)
+            .scaleX(1f)
+            .scaleY(1f)
+            .setDuration(260L)
+            .start()
+
+        updateBackCallback()
+    }
+
+    private fun updateBackCallback() {
+        if (!::backCallback.isInitialized) return
+        backCallback.isEnabled = fullPhotoOverlay.visibility == View.VISIBLE ||
+            photoDetailOverlay.visibility == View.VISIBLE ||
+            mapStageOpen
     }
 
     private fun hideTripListForMap() {

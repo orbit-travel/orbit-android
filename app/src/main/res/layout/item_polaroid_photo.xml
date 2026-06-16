@@ -69,5 +69,35 @@
             android:layout_height="42dp"
             android:layout_marginTop="4dp"
             android:text="@string/button_pick_location" />
+
+        <Button
+            android:id="@+id/buttonUsePreviousLocation"
+            android:layout_width="match_parent"
+            android:layout_height="42dp"
+            android:layout_marginTop="4dp"
+            android:text="@string/button_use_previous_location" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/buttonChangePhoto"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:text="@string/button_change_photo" />
+
+            <Button
+                android:id="@+id/buttonDeletePhoto"
+                android:layout_width="0dp"
+                android:layout_height="42dp"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="@string/button_delete_photo" />
+        </LinearLayout>
     </LinearLayout>
 </LinearLayout>
