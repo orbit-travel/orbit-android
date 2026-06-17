@@ -40,6 +40,10 @@ class GalleryPickerActivity : AppCompatActivity() {
 
         maxCount = intent.getIntExtra(EXTRA_MAX_COUNT, 1).coerceAtLeast(1)
 
+        findViewById<View>(R.id.buttonBack).setOnClickListener {
+            setResult(Activity.RESULT_CANCELED)
+            finish()
+        }
         titleText = findViewById(R.id.galleryPickerTitle)
         doneButton = findViewById(R.id.galleryPickerDone)
         emptyText = findViewById(R.id.galleryPickerEmpty)

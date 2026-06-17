@@ -1,9 +1,64 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Base application theme: deep-space dark with the logo's violet->magenta brand accent. -->
     <style name="Base.Theme.Orbit" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/orbit_brand</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/orbit_surface_light</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondary">@color/orbit_brand_magenta</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/orbit_surface_light</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/orbit_primary</item>
+        <item name="colorOnTertiary">@color/orbit_space</item>
+        <item name="android:colorBackground">@color/orbit_space</item>
+        <item name="colorOnBackground">@color/white</item>
+        <item name="colorSurface">@color/orbit_surface</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorSurfaceVariant">@color/orbit_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/orbit_text_secondary</item>
+        <item name="colorOutline">@color/orbit_outline</item>
+        <item name="colorError">@color/orbit_danger</item>
+        <item name="colorControlActivated">@color/orbit_brand</item>
+        <item name="android:windowBackground">@color/orbit_space</item>
+        <item name="android:statusBarColor">@color/orbit_space</item>
+        <item name="android:navigationBarColor">@color/orbit_space</item>
     </style>
 
     <style name="Theme.Orbit" parent="Base.Theme.Orbit" />
+
+    <!-- Slim pill behind the selected bottom-nav item, in the brand tint. -->
+    <style name="Widget.Orbit.NavIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:width">58dp</item>
+        <item name="android:height">30dp</item>
+        <item name="android:color">@color/orbit_brand_dim</item>
+    </style>
+
+    <!-- Primary call-to-action: full logo gradient, white label, pill corners. -->
+    <style name="Widget.Orbit.Button" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_btn_primary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingStart">22dp</item>
+        <item name="android:paddingEnd">22dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:gravity">center</item>
+    </style>
+
+    <!-- Secondary / toggle action: translucent surface with a brand outline. -->
+    <style name="Widget.Orbit.Button.Secondary" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/bg_btn_secondary</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:paddingStart">22dp</item>
+        <item name="android:paddingEnd">22dp</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="android:gravity">center</item>
+    </style>
 </resources>

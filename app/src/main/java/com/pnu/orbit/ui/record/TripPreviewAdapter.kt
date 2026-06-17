@@ -40,8 +40,8 @@ class TripPreviewAdapter(
     ) : RecyclerView.ViewHolder(itemView) {
         private val title: TextView = itemView.findViewById(R.id.tripTitle)
         private val subtitle: TextView = itemView.findViewById(R.id.tripSubtitle)
-        private val editButton: TextView = itemView.findViewById(R.id.buttonEditTrip)
-        private val deleteButton: TextView = itemView.findViewById(R.id.buttonDeleteTrip)
+        private val editButton: View = itemView.findViewById(R.id.buttonEditTrip)
+        private val deleteButton: View = itemView.findViewById(R.id.buttonDeleteTrip)
 
         fun bind(trip: Trip) {
             title.text = trip.title

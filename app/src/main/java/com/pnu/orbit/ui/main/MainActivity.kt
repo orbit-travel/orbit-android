@@ -17,13 +17,16 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
+        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigation)
+
+        // Keep the nav above the system gesture/3-button bar: the bar's own bottom padding absorbs
+        // the inset so its background extends behind the system bar while its items sit above it.
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            view.setPadding(systemBars.left, systemBars.top, systemBars.right, 0)
+            bottomNavigation.setPadding(0, 0, 0, systemBars.bottom)
             insets
         }
-
-        val bottomNavigation = findViewById<BottomNavigationView>(R.id.bottomNavigation)
         bottomNavigation.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.navigationRecord -> {

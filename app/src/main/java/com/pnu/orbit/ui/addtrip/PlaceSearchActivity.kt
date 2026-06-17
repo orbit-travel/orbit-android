@@ -77,6 +77,9 @@ class PlaceSearchActivity : AppCompatActivity(), OnMapReadyCallback {
             ?: false
         setContentView(R.layout.activity_place_search)
 
+        findViewById<View>(R.id.buttonBack).setOnClickListener {
+            onBackPressedDispatcher.onBackPressed()
+        }
         queryInput = findViewById(R.id.inputPlaceSearch)
         statusText = findViewById(R.id.placeSearchStatus)
         placeholder = findViewById(R.id.placeMapPlaceholder)

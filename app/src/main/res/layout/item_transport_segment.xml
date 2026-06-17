@@ -22,11 +22,15 @@
             android:textSize="15sp"
             android:textStyle="bold" />
 
-        <Button
+        <ImageButton
             android:id="@+id/buttonDeleteSegment"
-            android:layout_width="wrap_content"
+            android:layout_width="40dp"
             android:layout_height="40dp"
-            android:text="@string/button_delete" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/button_delete"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_delete" />
     </LinearLayout>
 
     <RadioGroup
@@ -63,6 +67,7 @@
 
     <Button
         android:id="@+id/buttonSelectDeparture"
+        style="@style/Widget.Orbit.Button.Secondary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -70,6 +75,7 @@
 
     <Button
         android:id="@+id/buttonSelectArrival"
+        style="@style/Widget.Orbit.Button.Secondary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"

@@ -109,7 +109,7 @@ class TripTimelineAdapter(
         private val radioCar: RadioButton = itemView.findViewById(R.id.radioCar)
         private val departure: Button = itemView.findViewById(R.id.buttonSelectDeparture)
         private val arrival: Button = itemView.findViewById(R.id.buttonSelectArrival)
-        private val delete: Button = itemView.findViewById(R.id.buttonDeleteSegment)
+        private val delete: View = itemView.findViewById(R.id.buttonDeleteSegment)
 
         fun bind(segment: TransportSegmentDraft, segmentIndex: Int, segmentCount: Int) {
             val context = itemView.context
@@ -167,7 +167,7 @@ class TripTimelineAdapter(
     ) : RecyclerView.ViewHolder(itemView) {
         private val pager: ViewPager2 = itemView.findViewById(R.id.photoBlockPager)
         private val empty: TextView = itemView.findViewById(R.id.photoBlockEmpty)
-        private val delete: Button = itemView.findViewById(R.id.buttonDeletePhotoBlock)
+        private val delete: View = itemView.findViewById(R.id.buttonDeletePhotoBlock)
         private val adapter = PolaroidPhotoAdapter(
             onPhotoChanged = callbacks::onPhotoChanged,
             onPhotoLocationRequested = callbacks::onPhotoLocationRequested,

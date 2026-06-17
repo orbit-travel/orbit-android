@@ -31,18 +31,16 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <TextView
+        <ImageView
             android:id="@+id/titleOrbit"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:gravity="center_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:layout_marginStart="18dp"
+            android:layout_marginTop="14dp"
+            android:adjustViewBounds="true"
+            android:contentDescription="@string/app_name"
             android:elevation="8dp"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp"
-            android:text="@string/app_name"
-            android:textColor="@color/white"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+            android:src="@drawable/logo_wordmark" />
     </FrameLayout>
 
     <com.google.android.material.bottomnavigation.BottomNavigationView
@@ -50,8 +48,12 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:background="@color/orbit_surface"
+        android:clipToPadding="false"
+        app:itemActiveIndicatorStyle="@style/Widget.Orbit.NavIndicator"
+        app:itemIconSize="22dp"
         app:itemIconTint="@color/bottom_nav_tint"
         app:itemTextColor="@color/bottom_nav_tint"
+        app:labelVisibilityMode="labeled"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

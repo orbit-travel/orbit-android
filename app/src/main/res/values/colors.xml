@@ -2,7 +2,7 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <color name="orbit_space">#10131A</color>
+    <color name="orbit_space">#02071C</color>
     <color name="orbit_surface">#191D26</color>
     <color name="orbit_surface_light">#252B36</color>
     <color name="orbit_surface_scrim">#CC111722</color>
@@ -13,4 +13,12 @@
     <color name="nebula_my">#7DD3FC</color>
     <color name="nebula_friends">#C084FC</color>
     <color name="nebula_world">#F472B6</color>
+
+    <!-- Brand accent: the logo gradient (blue-violet -> magenta) with the magenta "i" dot. -->
+    <color name="orbit_brand">#A24BFF</color>
+    <color name="orbit_brand_strong">#8A4FFF</color>
+    <color name="orbit_brand_magenta">#E0459E</color>
+    <color name="orbit_brand_dim">#33A24BFF</color>
+    <color name="orbit_danger">#FF6B6B</color>
+    <color name="orbit_outline">#3A4150</color>
 </resources>

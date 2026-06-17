@@ -265,11 +265,13 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnGeneratePlan"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="52dp"
                 android:layout_marginTop="24dp"
-                android:text="Generate AI itinerary"
-                android:textColor="@color/orbit_space"
-                app:backgroundTint="@color/orbit_primary" />
+                android:text="Generate itinerary"
+                android:textColor="@color/white"
+                android:textStyle="bold"
+                app:backgroundTint="@color/orbit_brand"
+                app:cornerRadius="14dp" />
         </LinearLayout>
     </ScrollView>
 

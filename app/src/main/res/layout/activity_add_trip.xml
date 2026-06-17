@@ -16,16 +16,29 @@
         android:paddingEnd="20dp"
         android:paddingBottom="40dp">
 
+        <ImageButton
+            android:id="@+id/buttonBack"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/button_cancel"
+            android:scaleType="centerInside"
+            android:src="@drawable/ic_arrow_back"
+            app:layout_constraintBottom_toBottomOf="@id/addTripTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@id/addTripTitle" />
+
         <TextView
             android:id="@+id/addTripTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:text="@string/add_trip_title"
             android:textColor="@color/white"
             android:textSize="24sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@id/buttonBack"
             app:layout_constraintTop_toTopOf="parent" />
 
         <EditText
@@ -33,6 +46,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
+            android:background="@drawable/bg_input"
             android:hint="@string/trip_title_hint"
             android:inputType="textCapWords"
             android:textColor="@color/white"
@@ -67,8 +81,12 @@
 
             <Button
                 android:id="@+id/buttonPreviousMonth"
+                style="@style/Widget.Orbit.Button.Secondary"
                 android:layout_width="48dp"
                 android:layout_height="40dp"
+                android:minWidth="0dp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
                 android:contentDescription="@string/calendar_previous"
                 android:text="@string/calendar_previous_symbol" />
 
@@ -84,8 +102,12 @@
 
             <Button
                 android:id="@+id/buttonNextMonth"
+                style="@style/Widget.Orbit.Button.Secondary"
                 android:layout_width="48dp"
                 android:layout_height="40dp"
+                android:minWidth="0dp"
+                android:paddingStart="0dp"
+                android:paddingEnd="0dp"
                 android:contentDescription="@string/calendar_next"
                 android:text="@string/calendar_next_symbol" />
         </LinearLayout>
@@ -137,6 +159,7 @@
 
         <Button
             android:id="@+id/buttonAddTimelineItem"
+            style="@style/Widget.Orbit.Button.Secondary"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
@@ -158,6 +181,7 @@
 
         <Button
             android:id="@+id/buttonSaveTrip"
+            style="@style/Widget.Orbit.Button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"

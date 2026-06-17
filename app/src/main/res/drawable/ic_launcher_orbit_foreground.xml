@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The source art is full-bleed with the emblem already centered. A modest inset keeps the
+  orbit ring + star inside the adaptive-icon safe zone so the whole emblem survives masking.
+-->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@mipmap/ic_launcher_orbit"
+    android:insetBottom="10%"
+    android:insetLeft="10%"
+    android:insetRight="10%"
+    android:insetTop="10%" />

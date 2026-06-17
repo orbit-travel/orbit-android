@@ -23,11 +23,15 @@
             android:textSize="15sp"
             android:textStyle="bold" />
 
-        <Button
+        <ImageButton
             android:id="@+id/buttonDeletePhotoBlock"
-            android:layout_width="wrap_content"
+            android:layout_width="40dp"
             android:layout_height="40dp"
-            android:text="@string/button_delete" />
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/button_delete"
+            android:padding="8dp"
+            android:scaleType="fitCenter"
+            android:src="@drawable/ic_delete" />
     </LinearLayout>
 
     <FrameLayout

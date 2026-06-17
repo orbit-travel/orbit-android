@@ -100,8 +100,8 @@
                 android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:text="Select"
-                android:textColor="@color/orbit_space"
-                app:backgroundTint="@color/orbit_primary"
+                android:textColor="@color/white"
+                app:backgroundTint="@color/orbit_brand"
                 app:rippleColor="#20FFFFFF" />
         </LinearLayout>
 

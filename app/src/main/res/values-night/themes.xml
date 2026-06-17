@@ -1,7 +1,27 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!-- Orbit is a dark, deep-space app in both modes; inherit the single brand theme. -->
     <style name="Base.Theme.Orbit" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/orbit_brand</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/orbit_surface_light</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+        <item name="colorSecondary">@color/orbit_brand_magenta</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/orbit_surface_light</item>
+        <item name="colorOnSecondaryContainer">@color/white</item>
+        <item name="colorTertiary">@color/orbit_primary</item>
+        <item name="colorOnTertiary">@color/orbit_space</item>
+        <item name="android:colorBackground">@color/orbit_space</item>
+        <item name="colorOnBackground">@color/white</item>
+        <item name="colorSurface">@color/orbit_surface</item>
+        <item name="colorOnSurface">@color/white</item>
+        <item name="colorSurfaceVariant">@color/orbit_surface_light</item>
+        <item name="colorOnSurfaceVariant">@color/orbit_text_secondary</item>
+        <item name="colorOutline">@color/orbit_outline</item>
+        <item name="colorError">@color/orbit_danger</item>
+        <item name="colorControlActivated">@color/orbit_brand</item>
+        <item name="android:windowBackground">@color/orbit_space</item>
+        <item name="android:statusBarColor">@color/orbit_space</item>
+        <item name="android:navigationBarColor">@color/orbit_space</item>
     </style>
 </resources>

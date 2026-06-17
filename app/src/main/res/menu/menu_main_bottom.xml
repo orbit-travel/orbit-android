@@ -2,10 +2,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/navigationRecord"
-        android:icon="@android:drawable/ic_menu_myplaces"
+        android:icon="@drawable/ic_nav_log"
         android:title="@string/tab_record" />
     <item
         android:id="@+id/navigationPlanner"
-        android:icon="@android:drawable/ic_menu_compass"
+        android:icon="@drawable/ic_nav_plan"
         android:title="@string/tab_planner" />
 </menu>

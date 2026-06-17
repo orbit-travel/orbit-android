@@ -27,11 +27,9 @@
 
     <Button
         android:id="@+id/btnAddPlace"
+        style="@style/Widget.Orbit.Button.Secondary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:backgroundTint="@color/orbit_primary"
-        android:text="+ Add place"
-        android:textColor="@color/orbit_space"
-        android:textStyle="bold" />
+        android:text="+ Add place" />
 </LinearLayout>

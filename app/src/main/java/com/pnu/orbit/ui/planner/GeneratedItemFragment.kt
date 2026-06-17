@@ -317,7 +317,7 @@ class GeneratedItemFragment : Fragment(), OnMapReadyCallback {
 
     private fun setMapVisible(visible: Boolean) {
         mapPanel.visibility = if (visible) View.VISIBLE else View.GONE
-        btnToggleMap.text = if (visible) "Hide map" else "Show map"
+        btnToggleMap.text = if (visible) "Hide map" else "Map"
         if (visible) {
             ensureMapFragment()
             updateMapForDay(viewPager.currentItem)

@@ -172,6 +172,9 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="12dp"
             android:visibility="gone"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
@@ -179,15 +182,17 @@
 
             <Button
                 android:id="@+id/buttonToggleTrips"
+                style="@style/Widget.Orbit.Button.Secondary"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_weight="1"
                 android:text="@string/travel_list" />
 
             <Button
                 android:id="@+id/buttonAddTrip"
+                style="@style/Widget.Orbit.Button"
                 android:layout_width="0dp"
-                android:layout_height="44dp"
+                android:layout_height="46dp"
                 android:layout_marginStart="10dp"
                 android:layout_weight="1"
                 android:text="@string/add_trip" />

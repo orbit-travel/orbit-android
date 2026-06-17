@@ -26,26 +26,27 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
-        android:backgroundTint="@color/orbit_primary"
+        android:background="@drawable/bg_input"
         android:hint="Itinerary title"
         android:singleLine="true"
         android:textColor="@color/white"
         android:textColorHint="@color/orbit_text_secondary"
-        android:textSize="20sp"
+        android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/btnBackToGenerate"
         app:layout_constraintEnd_toStartOf="@+id/btnApprovePlan"
         app:layout_constraintStart_toEndOf="@id/btnBackToGenerate"
         app:layout_constraintTop_toTopOf="@id/btnBackToGenerate" />
 
-    <com.google.android.material.button.MaterialButton
+    <Button
         android:id="@+id/btnApprovePlan"
-        style="@style/Widget.Material3.Button.ElevatedButton"
+        style="@style/Widget.Orbit.Button"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="44dp"
+        android:minWidth="0dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
         android:text="Save"
-        android:textColor="@color/orbit_space"
-        app:backgroundTint="#4CAF50"
         app:layout_constraintBottom_toBottomOf="@id/btnBackToGenerate"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/btnBackToGenerate" />
@@ -63,19 +64,36 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnEditPlan"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Edit" />
+            style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+            android:layout_width="48dp"
+            android:layout_height="44dp"
+            android:contentDescription="Edit"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_edit"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="@color/white" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnDeletePlan"
-            style="@style/Widget.Material3.Button.OutlinedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+            android:layout_width="48dp"
+            android:layout_height="44dp"
             android:layout_marginStart="8dp"
-            android:text="Delete"
-            android:textColor="#FF6B6B" />
+            android:contentDescription="Delete"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="0dp"
+            android:paddingEnd="0dp"
+            app:cornerRadius="12dp"
+            app:icon="@drawable/ic_delete"
+            app:iconGravity="textStart"
+            app:iconPadding="0dp"
+            app:iconTint="@color/white" />
     </LinearLayout>
 
     <TextView
@@ -96,7 +114,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:text="Show map"
+        android:text="Map"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/savedActionBar" />
@@ -146,7 +164,7 @@
         android:layout_height="44dp"
         android:gravity="center"
         android:text="&lt;"
-        android:textColor="@color/orbit_primary"
+        android:textColor="@color/orbit_brand_magenta"
         android:textSize="26sp"
         android:textStyle="bold"
         android:visibility="gone"
@@ -159,7 +177,7 @@
         android:layout_height="44dp"
         android:gravity="center"
         android:text="&gt;"
-        android:textColor="@color/orbit_primary"
+        android:textColor="@color/orbit_brand_magenta"
         android:textSize="26sp"
         android:textStyle="bold"
         android:visibility="gone"

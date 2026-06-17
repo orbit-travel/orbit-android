@@ -214,6 +214,10 @@ class AddTripActivity : AppCompatActivity() {
             adapter = timelineAdapter
         }
 
+        findViewById<View>(R.id.buttonBack).setOnClickListener {
+            currentFocus?.clearFocus()
+            onBackPressedDispatcher.onBackPressed()
+        }
         rangeCalendar.onDateClicked = viewModel::onDateClicked
         findViewById<Button>(R.id.buttonPreviousMonth).setOnClickListener {
             viewModel.moveDisplayedMonth(-1)

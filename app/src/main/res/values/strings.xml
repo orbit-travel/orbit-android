@@ -25,7 +25,7 @@
     <string name="button_change">Change</string>
     <string name="button_pick_airport">Pick airport</string>
     <string name="button_pick_place">Pick place</string>
-    <string name="button_pick_location">Pick location</string>
+    <string name="button_pick_location">Set location</string>
     <string name="section_dates">Dates</string>
     <string name="section_timeline">Timeline</string>
     <string name="section_transport">Transport</string>
@@ -71,9 +71,9 @@
     <string name="photo_note_hint">Add a note...</string>
     <string name="photo_delete_confirm_title">Remove photo</string>
     <string name="photo_delete_confirm_message">Remove this photo from the block? Other photos and their notes are kept.</string>
-    <string name="button_change_photo">Change photo</string>
+    <string name="button_change_photo">Change</string>
     <string name="button_delete_photo">Remove</string>
-    <string name="button_use_previous_location">Use previous photo\'s location</string>
+    <string name="button_use_previous_location">Use last location</string>
     <string name="photo_previous_location_unavailable">No previous photo location to copy.</string>
     <string name="gallery_picker_title">Select photos</string>
     <string name="gallery_picker_done">Done</string>

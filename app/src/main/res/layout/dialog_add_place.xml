@@ -31,7 +31,7 @@
         android:hint="예: 광안리 해수욕장, 스타벅스"
         android:textColorHint="#55667F"
         android:textColor="@color/white"
-        android:backgroundTint="@color/orbit_primary"
+        android:background="@drawable/bg_input"
         android:inputType="text"
         android:maxLines="1"
         android:layout_marginBottom="12dp" />
@@ -49,7 +49,7 @@
         android:id="@+id/spPlaceCategory"
         android:layout_width="match_parent"
         android:layout_height="48dp"
-        android:backgroundTint="@color/orbit_primary"
+        android:backgroundTint="@color/orbit_brand"
         android:layout_marginBottom="16dp" />
 
     <!-- Location inputs -->
@@ -95,10 +95,8 @@
 
     <Button
         android:id="@+id/btnPickOnMap"
+        style="@style/Widget.Orbit.Button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="지도에서 위치 선택"
-        android:backgroundTint="@color/orbit_primary"
-        android:textColor="@color/orbit_space"
-        android:textStyle="bold" />
+        android:text="지도에서 위치 선택" />
 </LinearLayout>

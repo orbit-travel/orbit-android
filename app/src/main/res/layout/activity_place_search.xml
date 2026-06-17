@@ -6,17 +6,44 @@
     android:background="@color/orbit_space"
     android:padding="16dp">
 
+    <ImageButton
+        android:id="@+id/buttonBack"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/button_cancel"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_arrow_back"
+        app:layout_constraintBottom_toBottomOf="@id/placeSearchTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/placeSearchTitle" />
+
+    <TextView
+        android:id="@+id/placeSearchTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="@string/place_search_title"
+        android:textColor="@color/white"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/buttonBack"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <EditText
         android:id="@+id/inputPlaceSearch"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_input"
         android:hint="@string/place_search_hint"
         android:inputType="text"
         android:textColor="@color/white"
         android:textColorHint="@color/orbit_text_secondary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@id/placeSearchTitle" />
 
     <TextView
         android:id="@+id/placeSearchStatus"
