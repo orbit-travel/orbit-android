@@ -13,6 +13,8 @@ data class TravelPlan(
 data class DayPlan(
     val day: Int,
     val attractions: List<Attraction>,
+    val region: String? = null,
+    val weatherEmoji: String? = null,
 )
 
 enum class TimeType {

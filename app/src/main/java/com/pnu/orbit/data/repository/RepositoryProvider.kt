@@ -10,6 +10,14 @@ object RepositoryProvider {
     private var tripRepositoryInstance: TripRepository? = null
     private var plannerRepositoryInstance: PlannerRepository? = null
     private var photoClassifierInstance: PhotoClassifier? = null
+    private var weatherRepositoryInstance: WeatherRepository? = null
+
+    fun weatherRepository(): WeatherRepository {
+        return weatherRepositoryInstance ?: synchronized(this) {
+            weatherRepositoryInstance ?: OpenMeteoWeatherRepository(RetrofitClient.openMeteoApi)
+                .also { weatherRepositoryInstance = it }
+        }
+    }
 
     fun tripRepository(context: Context): TripRepository {
         return tripRepositoryInstance ?: synchronized(this) {
@@ -31,6 +39,7 @@ object RepositoryProvider {
                 LocalPlannerRepository(
                     planDao = database.planDao(),
                     aiPlannerApi = aiPlanner,
+                    weatherRepository = weatherRepository(),
                 ).also { plannerRepositoryInstance = it }
             }
         }

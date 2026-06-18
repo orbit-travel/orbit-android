@@ -2,7 +2,6 @@ package com.pnu.orbit.ui.planner
 
 import android.app.Activity
 import android.app.AlertDialog
-import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -28,7 +27,10 @@ import com.pnu.orbit.domain.model.PlannerPlace
 import com.pnu.orbit.domain.model.TravelPlan
 import com.pnu.orbit.ui.addtrip.PlaceSearchActivity
 import com.pnu.orbit.ui.common.UiState
+import com.pnu.orbit.ui.common.showDateRangePickerDialog
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 
 class GeneratingPlanFragment : Fragment() {
@@ -40,8 +42,7 @@ class GeneratingPlanFragment : Fragment() {
     private lateinit var txtLoadingEmoji: TextView
     private lateinit var txtLoading: TextView
     private lateinit var txtError: TextView
-    private lateinit var btnStartDate: MaterialButton
-    private lateinit var btnEndDate: MaterialButton
+    private lateinit var btnDateRange: MaterialButton
     private lateinit var regionContainer: LinearLayout
     private lateinit var lodgingContainer: LinearLayout
     private lateinit var chipGroupStyle: ChipGroup
@@ -97,8 +98,7 @@ class GeneratingPlanFragment : Fragment() {
         txtLoadingEmoji = view.findViewById(R.id.txtLoadingEmoji)
         txtLoading = view.findViewById(R.id.txtLoading)
         txtError = view.findViewById(R.id.txtError)
-        btnStartDate = view.findViewById(R.id.btnStartDate)
-        btnEndDate = view.findViewById(R.id.btnEndDate)
+        btnDateRange = view.findViewById(R.id.btnDateRange)
         regionContainer = view.findViewById(R.id.regionContainer)
         lodgingContainer = view.findViewById(R.id.lodgingContainer)
         chipGroupStyle = view.findViewById(R.id.chipGroupStyle)
@@ -107,8 +107,7 @@ class GeneratingPlanFragment : Fragment() {
         btnDepartureTime = view.findViewById(R.id.btnDepartureTime)
         btnGeneratePlan = view.findViewById(R.id.btnGeneratePlan)
 
-        btnStartDate.setOnClickListener { showDatePicker(isStart = true) }
-        btnEndDate.setOnClickListener { showDatePicker(isStart = false) }
+        btnDateRange.setOnClickListener { showDateRangeDialog() }
         btnArrivalTime.setOnClickListener {
             showTimeWheelDialog(
                 title = "Arrival time",
@@ -153,33 +152,32 @@ class GeneratingPlanFragment : Fragment() {
         }
     }
 
-    private fun showDatePicker(isStart: Boolean) {
-        val initial = if (isStart) startDate else endDate
-        val now = initial ?: LocalDate.now()
-        DatePickerDialog(
-            requireContext(),
-            { _, year, month, day ->
-                val selected = LocalDate.of(year, month + 1, day)
-                if (isStart) {
-                    startDate = selected
-                    if (endDate != null && endDate!!.isBefore(selected)) endDate = selected
-                } else {
-                    endDate = selected
-                    if (startDate != null && startDate!!.isAfter(selected)) startDate = selected
-                }
-                updateDateButtons()
-                renderLodgingRows()
-            },
-            now.year,
-            now.monthValue - 1,
-            now.dayOfMonth,
-        ).show()
+    private fun showDateRangeDialog() {
+        showDateRangePickerDialog(
+            context = requireContext(),
+            initialStartMillis = startDate?.toStartOfDayMillis(),
+            initialEndMillis = endDate?.toStartOfDayMillis(),
+        ) { startMillis, endMillis ->
+            startDate = startMillis.toLocalDate()
+            endDate = endMillis.toLocalDate()
+            updateDateButtons()
+            renderLodgingRows()
+        }
     }
 
     private fun updateDateButtons() {
-        btnStartDate.text = startDate?.toString() ?: "Start date"
-        btnEndDate.text = endDate?.toString() ?: "End date"
+        btnDateRange.text = if (startDate != null && endDate != null) {
+            "$startDate -> $endDate"
+        } else {
+            "Select travel dates"
+        }
     }
+
+    private fun LocalDate.toStartOfDayMillis(): Long =
+        atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+
+    private fun Long.toLocalDate(): LocalDate =
+        Instant.ofEpochMilli(this).atZone(ZoneId.systemDefault()).toLocalDate()
 
     private fun updateTimeButtons() {
         btnArrivalTime.text = arrivalTime?.let { "Arrival $it" } ?: "Arrival time"

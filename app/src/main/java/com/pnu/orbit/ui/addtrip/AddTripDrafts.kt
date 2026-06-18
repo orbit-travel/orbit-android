@@ -5,7 +5,6 @@ import com.pnu.orbit.domain.model.PhotoTag
 import com.pnu.orbit.domain.model.TransportType
 
 data class DateRangeDraft(
-    val displayedMonthMillis: Long,
     val startDateMillis: Long? = null,
     val endDateMillis: Long? = null,
 )

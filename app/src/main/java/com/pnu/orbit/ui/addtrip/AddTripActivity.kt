@@ -33,6 +33,7 @@ import com.pnu.orbit.data.local.asset.Airport
 import com.pnu.orbit.data.local.asset.AirportDataSource
 import com.pnu.orbit.domain.model.TransportType
 import com.pnu.orbit.ui.common.UiState
+import com.pnu.orbit.ui.common.showDateRangePickerDialog
 import com.pnu.orbit.util.IntentKeys
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -117,9 +118,7 @@ class AddTripActivity : AppCompatActivity() {
 
     private lateinit var scrollView: NestedScrollView
     private lateinit var tripTitleInput: EditText
-    private lateinit var rangeCalendar: RangeCalendarView
-    private lateinit var monthTitle: TextView
-    private lateinit var dateRangeText: TextView
+    private lateinit var btnDateRange: Button
     private lateinit var statusText: TextView
     private lateinit var timelineList: RecyclerView
 
@@ -204,9 +203,7 @@ class AddTripActivity : AppCompatActivity() {
 
         scrollView = findViewById(R.id.addTripScrollView)
         tripTitleInput = findViewById(R.id.inputTripTitle)
-        rangeCalendar = findViewById(R.id.rangeCalendar)
-        monthTitle = findViewById(R.id.calendarMonthTitle)
-        dateRangeText = findViewById(R.id.dateRangeText)
+        btnDateRange = findViewById(R.id.btnDateRange)
         statusText = findViewById(R.id.addTripStatus)
 
         timelineList = findViewById<RecyclerView>(R.id.timelineList).apply {
@@ -218,12 +215,15 @@ class AddTripActivity : AppCompatActivity() {
             currentFocus?.clearFocus()
             onBackPressedDispatcher.onBackPressed()
         }
-        rangeCalendar.onDateClicked = viewModel::onDateClicked
-        findViewById<Button>(R.id.buttonPreviousMonth).setOnClickListener {
-            viewModel.moveDisplayedMonth(-1)
-        }
-        findViewById<Button>(R.id.buttonNextMonth).setOnClickListener {
-            viewModel.moveDisplayedMonth(1)
+        btnDateRange.setOnClickListener {
+            val range = viewModel.dateRange.value
+            showDateRangePickerDialog(
+                context = this,
+                initialStartMillis = range?.startDateMillis,
+                initialEndMillis = range?.endDateMillis,
+            ) { startMillis, endMillis ->
+                viewModel.setDateRange(startMillis, endMillis)
+            }
         }
         findViewById<Button>(R.id.buttonAddTimelineItem).setOnClickListener {
             // Commit any in-progress photo note before the list changes underneath the editor.
@@ -336,11 +336,7 @@ class AddTripActivity : AppCompatActivity() {
     }
 
     private fun renderDateRange(range: DateRangeDraft) {
-        monthTitle.text = monthFormat.format(Date(range.displayedMonthMillis))
-        rangeCalendar.setMonth(range.displayedMonthMillis)
-        rangeCalendar.setRange(range.startDateMillis, range.endDateMillis)
-
-        dateRangeText.text = when {
+        btnDateRange.text = when {
             range.startDateMillis == null -> getString(R.string.date_range_empty)
             range.endDateMillis == null -> getString(
                 R.string.date_range_start_only,
@@ -643,6 +639,5 @@ class AddTripActivity : AppCompatActivity() {
         private const val MAX_PICK_COUNT = 20
         private const val MAX_AIRPORT_RESULTS = 80
         private val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.US)
-        private val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.US)
     }
 }

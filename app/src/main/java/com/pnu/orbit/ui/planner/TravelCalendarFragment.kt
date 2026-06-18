@@ -12,6 +12,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
 import com.pnu.orbit.R
 import com.pnu.orbit.data.local.entity.SavedTravelPlanEntity
+import com.pnu.orbit.data.mapper.toDomain
 import com.pnu.orbit.ui.addtrip.RangeCalendarView.PlannedDateDecoration
 import com.pnu.orbit.ui.addtrip.RangeCalendarView
 import java.text.SimpleDateFormat
@@ -85,10 +86,13 @@ class TravelCalendarFragment : Fragment() {
     private fun renderPlans(plans: List<SavedTravelPlanEntity>) {
         val decorations = mutableMapOf<Long, PlannedDateDecoration>()
         plans.forEach { plan ->
-            getDatesForPlan(plan).forEach { date ->
+            val color = plan.color.takeIf { it != 0 } ?: fallbackColor(plan.id)
+            val dayPlansByDay = plan.toDomain().dayPlans.associateBy { it.day }
+            getDatesForPlan(plan).forEachIndexed { index, date ->
                 decorations[date] = PlannedDateDecoration(
                     title = plan.destination,
-                    color = plan.color.takeIf { it != 0 } ?: fallbackColor(plan.id),
+                    color = color,
+                    weatherEmoji = dayPlansByDay[index + 1]?.weatherEmoji,
                 )
             }
         }

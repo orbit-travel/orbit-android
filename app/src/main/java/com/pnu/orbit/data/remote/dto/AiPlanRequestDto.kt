@@ -16,6 +16,7 @@ data class AiPlanRequestDto(
     val arrivalTime: String?,
     val departureTime: String?,
     val transportMode: String?,
+    val weatherSummary: String? = null,
 )
 
 data class PlannerPlaceDto(

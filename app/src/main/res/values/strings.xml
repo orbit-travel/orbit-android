@@ -30,10 +30,6 @@
     <string name="section_timeline">Timeline</string>
     <string name="section_transport">Transport</string>
     <string name="section_photos">Photos</string>
-    <string name="calendar_previous">Previous month</string>
-    <string name="calendar_next">Next month</string>
-    <string name="calendar_previous_symbol">&lt;</string>
-    <string name="calendar_next_symbol">&gt;</string>
     <string name="date_range_empty">Select start and end dates.</string>
     <string name="date_range_start_only">Start: %1$s</string>
     <string name="date_range_selected">%1$s - %2$s</string>

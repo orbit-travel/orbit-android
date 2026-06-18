@@ -17,8 +17,6 @@ import com.pnu.orbit.ui.common.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.Calendar
-import java.util.Locale
 
 class AddTripViewModel(
     application: Application,
@@ -35,9 +33,7 @@ class AddTripViewModel(
     private val _editTitle = MutableLiveData<String?>()
     val editTitle: LiveData<String?> = _editTitle
 
-    private val _dateRange = MutableLiveData(
-        DateRangeDraft(displayedMonthMillis = startOfMonth(System.currentTimeMillis())),
-    )
+    private val _dateRange = MutableLiveData(DateRangeDraft())
     val dateRange: LiveData<DateRangeDraft> = _dateRange
 
     private val _timeline = MutableLiveData<List<TimelineDraft>>(
@@ -48,30 +44,8 @@ class AddTripViewModel(
     private val _saveState = MutableLiveData<UiState<Long>>(UiState.Empty)
     val saveState: LiveData<UiState<Long>> = _saveState
 
-    fun moveDisplayedMonth(delta: Int) {
-        val current = _dateRange.value ?: return
-        _dateRange.value = current.copy(
-            displayedMonthMillis = shiftMonth(current.displayedMonthMillis, delta),
-        )
-    }
-
-    fun onDateClicked(dateMillis: Long) {
-        val current = _dateRange.value ?: return
-        val clicked = startOfDay(dateMillis)
-        val start = current.startDateMillis
-        val end = current.endDateMillis
-        val next = when {
-            start == null || end != null -> current.copy(
-                startDateMillis = clicked,
-                endDateMillis = null,
-            )
-            clicked < start -> current.copy(
-                startDateMillis = clicked,
-                endDateMillis = start,
-            )
-            else -> current.copy(endDateMillis = clicked)
-        }
-        _dateRange.value = next
+    fun setDateRange(startMillis: Long, endMillis: Long) {
+        _dateRange.value = DateRangeDraft(startDateMillis = startMillis, endDateMillis = endMillis)
     }
 
     fun addSegment() {
@@ -238,7 +212,6 @@ class AddTripViewModel(
 
             _editTitle.value = trip.title
             _dateRange.value = DateRangeDraft(
-                displayedMonthMillis = startOfMonth(trip.startDate),
                 startDateMillis = trip.startDate,
                 endDateMillis = trip.endDate,
             )
@@ -432,32 +405,4 @@ class AddTripViewModel(
     private fun appString(id: Int): String = getApplication<Application>().getString(id)
 
     private fun newDraftId(): Long = draftIdCounter.incrementAndGet()
-
-    private fun startOfDay(millis: Long): Long {
-        val calendar = Calendar.getInstance(Locale.US)
-        calendar.timeInMillis = millis
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        return calendar.timeInMillis
-    }
-
-    private fun startOfMonth(millis: Long): Long {
-        val calendar = Calendar.getInstance(Locale.US)
-        calendar.timeInMillis = millis
-        calendar.set(Calendar.DAY_OF_MONTH, 1)
-        calendar.set(Calendar.HOUR_OF_DAY, 0)
-        calendar.set(Calendar.MINUTE, 0)
-        calendar.set(Calendar.SECOND, 0)
-        calendar.set(Calendar.MILLISECOND, 0)
-        return calendar.timeInMillis
-    }
-
-    private fun shiftMonth(millis: Long, delta: Int): Long {
-        val calendar = Calendar.getInstance(Locale.US)
-        calendar.timeInMillis = millis
-        calendar.add(Calendar.MONTH, delta)
-        return startOfMonth(calendar.timeInMillis)
-    }
 }

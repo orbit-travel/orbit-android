@@ -31,6 +31,7 @@ fun AiPlanResponseDto.toDomain(
 fun DayPlanDto.toDomain(): DayPlan = DayPlan(
     day = day,
     attractions = attractions.map { it.toDomain() },
+    region = region,
 )
 
 fun AttractionDto.toDomain(): Attraction = Attraction(
@@ -108,7 +109,9 @@ fun PlanEntity.toDomain(): TravelPlan =
                     }
                 }
             }
-            DayPlan(day = dayNum, attractions = attractions)
+            val region = dayObj.get("region")?.let { if (it.isJsonNull) null else it.asString }
+            val weatherEmoji = dayObj.get("weatherEmoji")?.let { if (it.isJsonNull) null else it.asString }
+            DayPlan(day = dayNum, attractions = attractions, region = region, weatherEmoji = weatherEmoji)
         }
         TravelPlan(
             id = id,

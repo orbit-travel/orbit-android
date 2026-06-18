@@ -68,71 +68,16 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/inputTripTitle" />
 
-        <LinearLayout
-            android:id="@+id/calendarHeader"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_marginTop="8dp"
-            android:gravity="center"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/dateSectionTitle">
-
-            <Button
-                android:id="@+id/buttonPreviousMonth"
-                style="@style/Widget.Orbit.Button.Secondary"
-                android:layout_width="48dp"
-                android:layout_height="40dp"
-                android:minWidth="0dp"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:contentDescription="@string/calendar_previous"
-                android:text="@string/calendar_previous_symbol" />
-
-            <TextView
-                android:id="@+id/calendarMonthTitle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:textColor="@color/white"
-                android:textSize="16sp"
-                android:textStyle="bold" />
-
-            <Button
-                android:id="@+id/buttonNextMonth"
-                style="@style/Widget.Orbit.Button.Secondary"
-                android:layout_width="48dp"
-                android:layout_height="40dp"
-                android:minWidth="0dp"
-                android:paddingStart="0dp"
-                android:paddingEnd="0dp"
-                android:contentDescription="@string/calendar_next"
-                android:text="@string/calendar_next_symbol" />
-        </LinearLayout>
-
-        <com.pnu.orbit.ui.addtrip.RangeCalendarView
-            android:id="@+id/rangeCalendar"
-            android:layout_width="0dp"
-            android:layout_height="320dp"
-            android:layout_marginTop="6dp"
-            android:background="@color/orbit_surface"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/calendarHeader" />
-
-        <TextView
-            android:id="@+id/dateRangeText"
+        <Button
+            android:id="@+id/btnDateRange"
+            style="@style/Widget.Orbit.Button.Secondary"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/date_range_empty"
-            android:textColor="@color/orbit_text_secondary"
-            android:textSize="13sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/rangeCalendar" />
+            app:layout_constraintTop_toBottomOf="@id/dateSectionTitle" />
 
         <TextView
             android:id="@+id/transportSectionTitle"
@@ -145,7 +90,7 @@
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/dateRangeText" />
+            app:layout_constraintTop_toBottomOf="@id/btnDateRange" />
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/timelineList"

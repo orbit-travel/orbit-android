@@ -8,6 +8,7 @@ data class AiPlanResponseDto(
 data class DayPlanDto(
     val day: Int,
     val attractions: List<AttractionDto>,
+    val region: String? = null,
 )
 
 data class AttractionDto(

@@ -90,6 +90,7 @@ class GeminiPlannerApi(
         val dateRange = listOfNotNull(request.startDate, request.endDate)
             .joinToString(" to ")
             .ifBlank { "${request.days} days" }
+        val weatherInfo = request.weatherSummary?.takeIf { it.isNotBlank() }
 
         return """
             Build a realistic ${request.days}-day itinerary for ${request.destination}.
@@ -102,8 +103,8 @@ class GeminiPlannerApi(
             Main transport: $transportMode.
             Lodging for route planning only, never as itinerary cards:
             $accommodationInfo
-
-            Use current public knowledge when helpful for seasonal events, festivals, closures, and likely weather for the dates.
+            ${if (weatherInfo != null) "\n            Actual daily forecast (use this, it is real data):\n            $weatherInfo\n            Prefer indoor/covered attractions on rain/snow/thunderstorm days and prioritize outdoor attractions on clear/partly cloudy days.\n" else ""}
+            Use current public knowledge when helpful for seasonal events, festivals, closures${if (weatherInfo == null) ", and likely weather for the dates" else ""}.
             Prefer famous first-time visitor routes, then weight the selected style categories.
             Day 1 starts at the arrival airport/station after immigration/baggage and a realistic 1-2 hour transfer into the city.
             Days 2..${request.days} start from the previous night's lodging when lodging exists; otherwise start from the region center.
@@ -116,12 +117,17 @@ class GeminiPlannerApi(
             Return compact JSON only. No markdown. No prose.
             Use concise English keywords/descriptions, max 12 words per description.
             Do not include image URLs.
+            Each day object must include a "region" field naming which region that day belongs to.
+            Use the exact same string as listed in "Required regions in order" above. If a day is a
+            day trip to a place not in that list (for example a side trip from a base city), use the
+            actual visited city's name instead.
             Return exactly this structure:
             {
               "destination": "${request.destination}",
               "days": [
                 {
                   "day": 1,
+                  "region": "${request.regions.firstOrNull()?.name ?: request.destination}",
                   "attractions": [
                     {
                       "sequence": 1,

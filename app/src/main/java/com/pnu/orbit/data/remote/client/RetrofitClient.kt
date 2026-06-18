@@ -2,7 +2,7 @@ package com.pnu.orbit.data.remote.client
 
 import com.pnu.orbit.data.remote.api.AiPlannerApi
 import com.pnu.orbit.data.remote.api.GeminiApi
-import com.pnu.orbit.data.remote.api.WeatherApi
+import com.pnu.orbit.data.remote.api.OpenMeteoApi
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.Response
@@ -68,15 +68,23 @@ object RetrofitClient {
             .build()
     }
 
+    private val openMeteoRetrofit: Retrofit by lazy {
+        Retrofit.Builder()
+            .baseUrl("https://api.open-meteo.com/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
     val aiPlannerApi: AiPlannerApi by lazy {
         retrofit.create(AiPlannerApi::class.java)
     }
 
-    val weatherApi: WeatherApi by lazy {
-        retrofit.create(WeatherApi::class.java)
-    }
-
     val geminiApi: GeminiApi by lazy {
         geminiRetrofit.create(GeminiApi::class.java)
+    }
+
+    val openMeteoApi: OpenMeteoApi by lazy {
+        openMeteoRetrofit.create(OpenMeteoApi::class.java)
     }
 }
