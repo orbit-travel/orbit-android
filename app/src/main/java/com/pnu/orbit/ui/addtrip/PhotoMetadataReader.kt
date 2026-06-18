@@ -1,6 +1,7 @@
 package com.pnu.orbit.ui.addtrip
 
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -65,15 +66,26 @@ class PhotoMetadataReader(
         }
     }
 
-    private fun readTakenAtFromMediaStore(uri: Uri): Long? {
-        val projection = arrayOf(MediaStore.Images.Media.DATE_TAKEN)
-        return runCatching {
-            context.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
-                if (!cursor.moveToFirst()) return@use null
-                val index = cursor.getColumnIndex(MediaStore.Images.Media.DATE_TAKEN)
-                if (index == -1 || cursor.isNull(index)) null else cursor.getLong(index)
-            }
-        }.getOrNull()
+    // Downloaded/web images usually have their EXIF capture date stripped, so DATE_TAKEN
+    // (which MediaStore populates from EXIF) is null too. Fall back to DATE_ADDED /
+    // DATE_MODIFIED — the file's import/modify time — which is what the system gallery
+    // shows for such photos. Query with a null projection so this also works for the
+    // limited column sets some content providers (e.g. the photo picker) expose.
+    private fun readTakenAtFromMediaStore(uri: Uri): Long? = runCatching {
+        context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null
+            // DATE_TAKEN is in milliseconds; DATE_ADDED / DATE_MODIFIED are in seconds.
+            columnMillis(cursor, MediaStore.Images.Media.DATE_TAKEN, 1L)
+                ?: columnMillis(cursor, MediaStore.Images.Media.DATE_ADDED, 1000L)
+                ?: columnMillis(cursor, MediaStore.Images.Media.DATE_MODIFIED, 1000L)
+        }
+    }.getOrNull()
+
+    private fun columnMillis(cursor: Cursor, column: String, multiplier: Long): Long? {
+        val index = cursor.getColumnIndex(column)
+        if (index == -1 || cursor.isNull(index)) return null
+        val value = cursor.getLong(index)
+        return if (value > 0) value * multiplier else null
     }
 
     companion object {

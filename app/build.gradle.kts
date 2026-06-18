@@ -33,6 +33,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // TFLite and SceneView/Filament ship native .so libs for every ABI, which bloats
+        // the APK. Keep only the ABIs we actually run on: arm64-v8a (real phones) and
+        // x86_64 (emulator). Drops armeabi-v7a + x86, roughly halving the APK.
+        ndk {
+            abiFilters += listOf("arm64-v8a", "x86_64")
+        }
+
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
         buildConfigField("String", "MAPS_API_KEY", mapsApiKey.asBuildConfigString())
         buildConfigField("String", "PLACES_API_KEY", placesApiKey.asBuildConfigString())
@@ -54,6 +62,10 @@ android {
     }
     buildFeatures {
         buildConfig = true
+    }
+    androidResources {
+        // Keep the on-device ML model uncompressed so TFLite can mmap it from assets.
+        noCompress += "tflite"
     }
 }
 
@@ -84,6 +96,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.sceneview)
+    implementation(libs.litert)
     ksp(libs.androidx.room.compiler)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

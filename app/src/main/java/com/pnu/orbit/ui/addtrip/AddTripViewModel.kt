@@ -13,7 +13,6 @@ import com.pnu.orbit.domain.model.TransportSegment
 import com.pnu.orbit.domain.model.TransportType
 import com.pnu.orbit.domain.model.TravelPhoto
 import com.pnu.orbit.domain.model.Trip
-import com.pnu.orbit.ml.FallbackPhotoClassifier
 import com.pnu.orbit.ui.common.UiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -26,7 +25,7 @@ class AddTripViewModel(
 ) : AndroidViewModel(application) {
     private val repository = RepositoryProvider.tripRepository(application)
     private val metadataReader = PhotoMetadataReader(application)
-    private val classifier = FallbackPhotoClassifier(application)
+    private val classifier = RepositoryProvider.photoClassifier(application)
     private val photoStore = com.pnu.orbit.data.local.PhotoFileStore(application)
 
     private val draftIdCounter = java.util.concurrent.atomic.AtomicLong(System.nanoTime())

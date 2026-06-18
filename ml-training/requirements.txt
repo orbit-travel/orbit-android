@@ -1,0 +1,5 @@
+# Install inside WSL2 (Ubuntu) — see README.md.
+# The [and-cuda] extra pulls the NVIDIA CUDA 12 runtime wheels so the RTX 4060
+# (Ada) works via the WSL2 driver passthrough. Do NOT install a Linux NVIDIA
+# driver or cuda-toolkit inside WSL.
+tensorflow[and-cuda]==2.15.1

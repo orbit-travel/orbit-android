@@ -134,4 +134,13 @@
     <string name="photo_detail_place">Location: %1$s</string>
     <string name="photo_detail_no_date">Date unknown</string>
     <string name="photo_detail_no_place">No location</string>
+
+    <!-- On-device ML photo-tag labels (TfLitePhotoClassifier); classes match the
+         Intel Image Classification dataset used in ml-training/ -->
+    <string name="photo_tag_buildings">🏙 Buildings</string>
+    <string name="photo_tag_forest">🌲 Forest</string>
+    <string name="photo_tag_glacier">🏔 Glacier</string>
+    <string name="photo_tag_mountain">⛰ Mountain</string>
+    <string name="photo_tag_sea">🌊 Sea</string>
+    <string name="photo_tag_street">🛣 Street</string>
 </resources>

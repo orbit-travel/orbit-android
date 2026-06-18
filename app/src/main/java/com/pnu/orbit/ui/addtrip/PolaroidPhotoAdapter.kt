@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.pnu.orbit.R
+import com.pnu.orbit.domain.model.PhotoTag
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -95,6 +96,7 @@ class PolaroidPhotoAdapter(
         private val onUsePreviousLocationRequested: (PhotoDraft) -> Unit,
     ) : RecyclerView.ViewHolder(itemView) {
         private val image: ImageView = itemView.findViewById(R.id.polaroidImage)
+        private val tagChip: TextView = itemView.findViewById(R.id.photoTagChip)
         private val comment: EditText = itemView.findViewById(R.id.inputPhotoComment)
         private val takenTime: TextView = itemView.findViewById(R.id.photoTakenTimeText)
         private val location: TextView = itemView.findViewById(R.id.photoLocationText)
@@ -109,6 +111,7 @@ class PolaroidPhotoAdapter(
         fun bind(photo: PhotoDraft) {
             boundPhoto = photo
             loadImage(photo)
+            bindTag(photo.tag)
             // Tapping the photo toggles fill (centre-crop) vs fit (whole photo, black bars). No extra
             // button, per the polaroid concept.
             image.setOnClickListener { toggleCropMode() }
@@ -140,6 +143,25 @@ class PolaroidPhotoAdapter(
             }
             deleteButton.setOnClickListener {
                 boundPhoto?.let(onPhotoDeleteRequested)
+            }
+        }
+
+        /** Shows the on-device ML scene tag as an overlay chip; hidden when UNKNOWN. */
+        private fun bindTag(tag: PhotoTag) {
+            val labelRes = when (tag) {
+                PhotoTag.BUILDINGS -> R.string.photo_tag_buildings
+                PhotoTag.FOREST -> R.string.photo_tag_forest
+                PhotoTag.GLACIER -> R.string.photo_tag_glacier
+                PhotoTag.MOUNTAIN -> R.string.photo_tag_mountain
+                PhotoTag.SEA -> R.string.photo_tag_sea
+                PhotoTag.STREET -> R.string.photo_tag_street
+                PhotoTag.UNKNOWN -> null
+            }
+            if (labelRes == null) {
+                tagChip.visibility = View.GONE
+            } else {
+                tagChip.setText(labelRes)
+                tagChip.visibility = View.VISIBLE
             }
         }
 

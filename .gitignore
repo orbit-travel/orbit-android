@@ -13,3 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# ML training data / artifacts (large, generated)
+/seg_train.zip
+/ml-training/data/
+/ml-training/outputs/
+/ml-training/.venv/

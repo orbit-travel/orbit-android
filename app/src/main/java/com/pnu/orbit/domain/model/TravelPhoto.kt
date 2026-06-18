@@ -28,12 +28,15 @@ data class NewTravelPhoto(
     val cropToFill: Boolean = true,
 )
 
+// Classes match the Intel Image Classification dataset the on-device model is
+// trained on (see ml-training/). Names mirror the dataset folder names so the
+// model's photo_labels.txt maps 1:1 via PhotoTag.valueOf (see PhotoMapper).
 enum class PhotoTag {
-    CITY,
-    SEA,
+    BUILDINGS,
+    FOREST,
+    GLACIER,
     MOUNTAIN,
-    FOOD,
-    NIGHT,
-    LANDMARK,
+    SEA,
+    STREET,
     UNKNOWN,
 }
