@@ -2,8 +2,6 @@
 
 **orbit** is an Android travel-record and AI travel-planner app. Each user has their own travel "Earth" — trips, photos, and routes orbit around their personal world, visualized as a rotating 3D globe.
 
-Built as a 2-person, ~2-week university term project (PNU SW 2026 / Software Design & Experiment).
-
 ---
 
 ## Demo Video
