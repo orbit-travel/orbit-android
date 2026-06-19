@@ -8,9 +8,9 @@ Built as a 2-person, ~2-week university term project (PNU SW 2026 / Software Des
 
 ## Demo Video
 
-[![Demo Video](https://img.youtube.com/vi/7J_eY6hjeIQ/maxresdefault.jpg)](https://www.youtube.com/watch?v=7J_eY6hjeIQ)
+[![Demo Video](https://img.youtube.com/vi/0uYLMqmMR1I/maxresdefault.jpg)](https://www.youtube.com/watch?v=0uYLMqmMR1I)
 
-*(placeholder link — https://www.youtube.com/watch?v=7J_eY6hjeIQ)*
+*(placeholder link — https://www.youtube.com/watch?v=0uYLMqmMR1I)*
 
 ---
 
