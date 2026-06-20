@@ -6,9 +6,9 @@
 
 ## Demo Video
 
-[![Demo Video](https://img.youtube.com/vi/0uYLMqmMR1I/maxresdefault.jpg)](https://www.youtube.com/watch?v=0uYLMqmMR1I)
+[![Demo Video](https://img.youtube.com/vi/ipVax9baxco/maxresdefault.jpg)](https://www.youtube.com/watch?v=ipVax9baxco)
 
-*(placeholder link — https://www.youtube.com/watch?v=0uYLMqmMR1I)*
+*(placeholder link — https://www.youtube.com/watch?v=ipVax9baxco)*
 
 ---
 
