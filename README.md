@@ -22,7 +22,7 @@ Don't want to clone and build it yourself? Grab the prebuilt debug APK from the 
 
 ### Travel Record
 - Create a trip with title, start place, destination, and date range
-- Build a trip out of ordered transport segments (flight / train / car / accommodation)
+- Build a trip out of ordered transport segments (flight / train / car / accommodation), with airport search backed by a bundled offline airport dataset for flight legs
 - Import photos from the system photo picker
 - Automatic EXIF metadata extraction (GPS coordinates, taken date), falling back to the trip destination when GPS is missing
 - Trip list with cover image, destination, date range, and photo count (RecyclerView)
@@ -31,12 +31,12 @@ Don't want to clone and build it yourself? Grab the prebuilt debug APK from the 
 - Real Google Maps rendering of a trip's route and photo locations
 - Mode-colored, curved transport polylines with animated moving icons
 - Stacked photo markers that fan out on tap, with photo + comment overlay
-- Offline coordinate fallback (bundled airport dataset + known-place lookup) when geocoding is unavailable
+- Coordinate fallback via a built-in known-place lookup when a photo or place has no GPS, so routes still render
 
 ### AI Travel Planner
-- Generates a day-by-day itinerary (morning / lunch / afternoon / evening) from destination, duration, and travel style
+- Generates a day-by-day itinerary (an ordered list of attractions per day, with optional time slots) from destination, dates, regions, and travel style
 - Backed by the Gemini API via Retrofit + Kotlin Coroutines, with structured JSON output
-- Automatic retry on rate-limiting, and a stable fallback demo plan if the API call fails or the key is missing
+- Automatic retry on rate-limiting; if the call fails or the key is missing, it surfaces a clear error state (no crash) rather than a fabricated plan
 - Results saved to Room and browsable through a ViewPager2 day-by-day view
 
 ### Weather
@@ -159,7 +159,7 @@ PLACES_API_KEY=your_google_places_api_key
 GEMINI_API_KEY=your_gemini_api_key
 ```
 
-`PLACES_API_KEY` is optional and falls back to `MAPS_API_KEY` if omitted. A missing or invalid key degrades gracefully to fallback/demo data — the app will not crash.
+`PLACES_API_KEY` is optional and falls back to `MAPS_API_KEY` if omitted. A missing or invalid key degrades gracefully — the planner shows an error state, weather is omitted, and the map falls back to bundled offline coordinates — so the app will not crash.
 
 ### 3. Build & run
 
